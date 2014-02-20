@@ -6,6 +6,7 @@ You can instantiate multiple mods of course, and mix the styles (sync/async) dep
 Two different mods for different styles of operations:
 
 `com.scalabl3.vertxmods.couchbase.async`
+
 `com.scalabl3.vertxmods.couchbase.sync`
 
 I worked on this last in June 2013 and got a lot of it working, but need to refresh it all and see where it was left off.
