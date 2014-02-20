@@ -1,0 +1,6 @@
+{
+    "main": "com.scalabl3.vertxmods.couchbase.sync.CouchbaseSyncQuickTest",
+    "worker": true,
+    "preserve-cwd": true,
+    "auto-redeploy": true
+}

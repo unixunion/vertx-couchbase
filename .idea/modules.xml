@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/com.scalabl3.vertxmods.iml" filepath="$PROJECT_DIR$/com.scalabl3.vertxmods.iml" />
+      <module fileurl="file://$PROJECT_DIR$/com.scalabl3.vertxmods.couchbase.async/com.scalabl3.vertxmods.couchbase.async.iml" filepath="$PROJECT_DIR$/com.scalabl3.vertxmods.couchbase.async/com.scalabl3.vertxmods.couchbase.async.iml" />
+      <module fileurl="file://$PROJECT_DIR$/com.scalabl3.vertxmods.couchbase.sync/com.scalabl3.vertxmods.couchbase.sync.iml" filepath="$PROJECT_DIR$/com.scalabl3.vertxmods.couchbase.sync/com.scalabl3.vertxmods.couchbase.sync.iml" />
+      <module fileurl="file://$PROJECT_DIR$/com.scalabl3.vertxmods.couchbase.test/com.scalabl3.vertxmods.couchbase.test.iml" filepath="$PROJECT_DIR$/com.scalabl3.vertxmods.couchbase.test/com.scalabl3.vertxmods.couchbase.test.iml" />
+    </modules>
+  </component>
+</project>
+

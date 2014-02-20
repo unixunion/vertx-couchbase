@@ -1,0 +1,22 @@
+<component name="libraryTable">
+  <library name="lib">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/com.scalabl3.vertxmods.couchbase.async/lib/lib/spymemcached-2.8.12-sources.jar!/" />
+      <root url="jar://$PROJECT_DIR$/com.scalabl3.vertxmods.couchbase.async/lib/lib/httpcore-nio-4.1.1.jar!/" />
+      <root url="jar://$PROJECT_DIR$/com.scalabl3.vertxmods.couchbase.async/lib/lib/couchbase-client-1.1.5.jar!/" />
+      <root url="jar://$PROJECT_DIR$/com.scalabl3.vertxmods.couchbase.async/lib/lib/commons-codec-1.5.jar!/" />
+      <root url="jar://$PROJECT_DIR$/com.scalabl3.vertxmods.couchbase.async/lib/lib/couchbase-client-1.1.5-sources.jar!/" />
+      <root url="jar://$PROJECT_DIR$/com.scalabl3.vertxmods.couchbase.async/lib/lib/spymemcached-2.8.12-javadocs.jar!/" />
+      <root url="jar://$PROJECT_DIR$/com.scalabl3.vertxmods.couchbase.async/lib/lib/netty-3.5.5.Final.jar!/" />
+      <root url="jar://$PROJECT_DIR$/com.scalabl3.vertxmods.couchbase.async/lib/lib/httpcore-4.1.1.jar!/" />
+      <root url="jar://$PROJECT_DIR$/com.scalabl3.vertxmods.couchbase.async/lib/lib/spymemcached-2.8.12.jar!/" />
+      <root url="jar://$PROJECT_DIR$/com.scalabl3.vertxmods.couchbase.async/lib/lib/gson-2.2.3.jar!/" />
+      <root url="jar://$PROJECT_DIR$/com.scalabl3.vertxmods.couchbase.async/lib/lib/gson-2.2.3-javadoc.jar!/" />
+      <root url="jar://$PROJECT_DIR$/com.scalabl3.vertxmods.couchbase.async/lib/lib/jettison-1.1.jar!/" />
+      <root url="jar://$PROJECT_DIR$/com.scalabl3.vertxmods.couchbase.async/lib/lib/gson-2.2.3-sources.jar!/" />
+      <root url="jar://$PROJECT_DIR$/com.scalabl3.vertxmods.couchbase.async/lib/lib/couchbase-client-1.1.5-javadoc.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
