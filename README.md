@@ -3,6 +3,8 @@
 Message Bus based style of working with Couchbase Server with command message, callbacks and futures depending on operation type/style.
 You can instantiate multiple mods of course, and mix the styles (sync/async) depending on what you are trying to achieve.
 
+The `CouchbaseCommandPacketSync` and `CouchbaseCommandPacketAsync` classes describe the message formats for couchbase commands.
+
 Two different mods for different styles of operations:
 
 `com.scalabl3.vertxmods.couchbase.async`
