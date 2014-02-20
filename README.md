@@ -1,4 +1,5 @@
-# Vertx.io (Vert.x) Couchbase Message Bus SDK/Wrapper
+# Vertx.io (Vert.x) Couchbase 
+### Message Bus SDK/Wrapper
 
 Message Bus based style of working with Couchbase Server with command message, callbacks and futures depending on operation type/style.
 You can instantiate multiple mods of course, and mix the styles (sync/async) depending on what you are trying to achieve.
