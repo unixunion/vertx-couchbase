@@ -1,5 +1,10 @@
 // Example JSON config file
 
 {
-  "foo": "bar"
+  "async_mode": false,
+  "address": "vertx.couchbase.sync",
+  "couchbase.nodelist": "localhost:8091",
+  "couchbase.bucket": "ivault",
+  "couchbase.bucket.password": "",
+  "couchbase.num.clients": 1
 }

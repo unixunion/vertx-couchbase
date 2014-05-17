@@ -1,0 +1,14 @@
+<?xml version="1.1" encoding="UTF-8"?>
+<testsuite name="CouchbaseSyncTests" tests="2" failures="0" errors="0" timestamp="2014-05-17T15:39:36" hostname="Kegans-MacBook.local" time="0.116">
+  <properties/>
+  <testcase name="test1" classname="CouchbaseSyncTests" time="0.098"/>
+  <testcase name="test2" classname="CouchbaseSyncTests" time="0.005"/>
+  <system-out><![CDATA[@Before setUp
+@Test test1()
+@After tearDown
+@Before setUp
+@Test test2()
+@After tearDown
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

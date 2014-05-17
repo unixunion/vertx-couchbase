@@ -1,0 +1,5 @@
+src/main/resources
+bin
+out/production/vertx-couchbase-gradle
+out/test/vertx-couchbase-gradle
+build/deps
