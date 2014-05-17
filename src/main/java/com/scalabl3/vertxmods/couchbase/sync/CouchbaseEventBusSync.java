@@ -7,6 +7,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
 import com.couchbase.client.CouchbaseClient;
+import com.google.gson.Gson;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
@@ -73,7 +74,7 @@ public class CouchbaseEventBusSync extends Verticle {
 
     Handler<Message<JsonObject>> cbSyncHandler = new Handler<Message<JsonObject>>() {
         public void handle(Message<JsonObject> message) {
-            logger.info("Got message:" + message.body().toString());
+            logger.debug("Got message:" + message.body().toString());
             String command = CouchbaseCommandPacketSync.voidNull(message.body().getString("op"));
 
             if (command.isEmpty()) {
@@ -138,4 +139,6 @@ public class CouchbaseEventBusSync extends Verticle {
         }
         return CouchbaseCommandPacketSync.valueOf(name.toUpperCase());
     }
+
+
 }

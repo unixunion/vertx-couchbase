@@ -1,3 +1,4 @@
+import com.google.gson.Gson;
 import org.junit.Test;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
@@ -10,6 +11,7 @@ import org.vertx.testtools.TestVerticle;
 import static org.vertx.testtools.VertxAssert.*;
 
 import java.util.HashMap;
+import java.util.UUID;
 
 /**
  * Created with IntelliJ IDEA.
@@ -57,8 +59,6 @@ public class Main extends TestVerticle {
 
         System.out.println("\n\n\nDeploy Worker Verticle Couchbase Sync\n\n");
 
-//        container.deployWorkerVerticle("com.scalabl3.vertxmods.couchbase.sync.CouchbaseEventBusSync", config, 1, true, new AsyncResultHandler<String>() {
-
         container.deployWorkerVerticle("com.scalabl3.vertxmods.couchbase.sync.CouchbaseEventBusSync", config, 1, true, new AsyncResultHandler<String>() {
 
              @Override
@@ -84,13 +84,75 @@ public class Main extends TestVerticle {
 
     }
 
-
-    @Test
-    public void foo() {
+    private String encode(Object val) {
+        // we need to encode the value portion of the object with this.
+        /*
+        EG: ADD object
 
         JsonObject request = new JsonObject().putString("op", "ADD")
+                .putString("key", id.toString())
+                .putString("value", encode(new JsonObject()
+                        .putString("username", "user"+id.toString())
+                        .putString("password", "somepassword"))
+                )
+                .putNumber("expiry", 300)
+                .putBoolean("ack", true);
+
+         */
+        Gson gson = new Gson();
+        return gson.toJson(val);
+    }
+
+    public void add(Integer id) {
+        JsonObject request = new JsonObject().putString("op", "ADD")
+                .putString("key", id.toString())
+                .putString("value", encode(new JsonObject()
+                        .putString("username", "user"+id.toString())
+                        .putString("password", "somepassword"))
+                )
+                .putNumber("expiry", 300)
+                .putBoolean("ack", true);
+
+        container.logger().debug("sending message to address: " + config.getString("address"));
+
+        vertx.eventBus().send(config.getString("address"), request, new Handler<Message<JsonObject>>() {
+            @Override
+            public void handle(Message<JsonObject> reply) {
+                try {
+                    System.out.print(".");
+                    JsonObject body = reply.body();
+                    assertNotNull(body.toString());
+//                    testComplete();
+                } catch (Exception e) {
+                    System.out.print("!");
+//                    e.printStackTrace();
+//                    throw e;
+                }
+            }
+        });
+    }
+
+    @Test
+    public void addBenchmark() {
+        long startTime = System.currentTimeMillis();
+        long endTime = 0;
+
+        for(int i=0; i < 100000; i++) {
+            add(i);
+        }
+        endTime = System.currentTimeMillis();
+
+        long timeneeded =  ((endTime-startTime) /1000);
+
+        System.out.println("done in " + timeneeded + "seconds");
+        testComplete();
+
+    }
+
+    @Test
+    public void get() {
+        JsonObject request = new JsonObject().putString("op", "GET")
                 .putString("key", "1")
-                .putString("value", "data goes here")
                 .putBoolean("ack", true);
 
         container.logger().info("sending message to address: " + config.getString("address"));
