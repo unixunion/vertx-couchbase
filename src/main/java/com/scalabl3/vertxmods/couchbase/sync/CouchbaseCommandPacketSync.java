@@ -1,6 +1,10 @@
 package com.scalabl3.vertxmods.couchbase.sync;
 
 import com.couchbase.client.CouchbaseClient;
+import com.couchbase.client.protocol.views.Query;
+import com.couchbase.client.protocol.views.View;
+import com.couchbase.client.protocol.views.ViewResponse;
+import com.couchbase.client.protocol.views.ViewRow;
 import net.spy.memcached.CASResponse;
 import net.spy.memcached.CASValue;
 import net.spy.memcached.PersistTo;
@@ -27,6 +31,57 @@ public enum CouchbaseCommandPacketSync {
     * INCR, DECR
     *
     */
+
+    QUERY() {
+        // views and whatnot
+            @Override
+            public JsonObject operation(CouchbaseClient cb, Message<JsonObject> message) throws Exception {
+                System.out.println("query called with message: " + message.body().toString());
+                String design_doc = message.body().getString("design_doc");
+                String view_name = message.body().getString("view_name");
+                String key = message.body().getString("key");
+                Boolean include_docs = message.body().getBoolean("include_docs", true);
+
+                View view = cb.getView(design_doc, view_name);
+                Query query = new Query();
+                query.setKey(key);
+                query.setIncludeDocs(include_docs);
+
+                JsonObject result = new JsonObject();
+
+                ViewResponse response = cb.query(view, query);
+
+                JsonArray ja = new JsonArray();
+
+                for (ViewRow row : response) {
+                    System.out.println(row.getDocument());
+                    ja.add(row.getDocument());
+                }
+
+                result.putArray("result", ja);
+                return result;
+
+            }
+
+            @Override
+            public JsonObject buildResponse(Message<JsonObject> message, JsonObject result, boolean returnAcknowledgement) throws Exception {
+
+                if(!returnAcknowledgement) {
+                    return null;
+                }
+
+                JsonObject response = createGenericResponse(message);
+
+                if (result.getBoolean("success")) {
+                    response.putBoolean("success", true);
+                } else {
+                    response.putBoolean("success", false);
+                }
+
+                response.putObject("response", result);
+                return response;
+            }
+    },
 
     INCR() {
         @Override

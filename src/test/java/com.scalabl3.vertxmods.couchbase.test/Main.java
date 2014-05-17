@@ -110,7 +110,7 @@ public class Main extends TestVerticle {
                         .putString("username", "user"+id.toString())
                         .putString("password", "somepassword"))
                 )
-                .putNumber("expiry", 300)
+                .putNumber("expiry", 3600)
                 .putBoolean("ack", true);
 
         container.logger().debug("sending message to address: " + config.getString("address"));
@@ -162,6 +162,33 @@ public class Main extends TestVerticle {
             public void handle(Message<JsonObject> reply) {
                 try {
                     System.out.println("Response: " + reply.body());
+                    JsonObject body = reply.body();
+                    assertNotNull(body.toString());
+                    testComplete();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    throw e;
+                }
+            }
+        });
+    }
+
+    @Test
+    public void query() {
+        JsonObject request = new JsonObject().putString("op", "QUERY")
+                .putString("design_doc", "users")
+                .putString("view_name", "users")
+                .putString("key", "user99990")
+                .putBoolean("include_docs", true)
+                .putBoolean("ack", true);
+
+        container.logger().debug("sending message to address: " + config.getString("address"));
+
+        vertx.eventBus().send(config.getString("address"), request, new Handler<Message<JsonObject>>() {
+            @Override
+            public void handle(Message<JsonObject> reply) {
+                try {
+                    System.out.print("handler reply: " + reply.body().toString());
                     JsonObject body = reply.body();
                     assertNotNull(body.toString());
                     testComplete();
