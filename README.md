@@ -1,22 +1,12 @@
-# Vertx.io (Vert.x) Couchbase 
-### Message Bus SDK/Wrapper
+# Vert.x Gradle Template
 
-Message Bus based style of working with Couchbase Server with command message, callbacks and futures depending on operation type/style.
-You can instantiate multiple mods of course, and mix the styles (sync/async) depending on what you are trying to achieve.
+Template project for creating a Vert.x module with a Gradle build.
 
-The `CouchbaseCommandPacketSync` and `CouchbaseCommandPacketAsync` classes describe the message formats for couchbase commands.
+Clone this and adapt it to easily develop Vert.x modules using Gradle as your build tool.
 
-Two different mods for different styles of operations:
+By default this module contains a simple Java verticle which listens on the event bus and responds to `ping!`
+messages with `pong!`.
 
-`com.scalabl3.vertxmods.couchbase.async`
+This template also shows you how to write tests in Java, Groovy, Ruby and Python
 
-`com.scalabl3.vertxmods.couchbase.sync`
-
-I worked on this last in June 2013 and got a lot of it working, but need to refresh it all and see where it was left off.
-
-TODO
----
-* Needs updating to gradle style project
-* Was created for older vert.x release (2.0.0)
-* Full test coverage not there yet
-* Needs to be updated to latest Couchbase Java SDK
+See the [build script](build.gradle) for the list of useful tasks
