@@ -101,6 +101,12 @@ JsonObject request = new JsonObject().putString("op", "QUERY")
 vertx.eventBus().send(config.getString("address"), request, new Handler<Message<JsonObject>>()...
 ```
 
+### Performance Testing
+A couple of tests for sync. 
+
+./gradlew test -Dtest.single=QueryTests
+./gradlew test -Dtest.single=Main
+
 ### SET
 
 When creating documents, be sure to envode the valye portion with Gson
@@ -113,15 +119,21 @@ private String encode(Object val) {
         return gson.toJson(val);
 }
 
+// simple userclass instance
+User user = new User("someusername", "somepassword");
+
+// put the object into the value portion of a op:ADD event
 JsonObject request = new JsonObject().putString("op", "ADD")
                 .putString("key", id.toString())
-                .putString("value", encode(new JsonObject()
-                        .putString("username", "bob")
-                        .putString("password", "cantguessthis!"))
-                )
+                .putString("value", encode(user)
                 .putNumber("expiry", 300)
                 .putBoolean("ack", true);
                 
+// send it off
 vertx.eventBus().send("vertx.couchbase.sync", request, new Handler<Message<JsonObject>>()...
 
 ```
+
+### GET
+
+### QUERY

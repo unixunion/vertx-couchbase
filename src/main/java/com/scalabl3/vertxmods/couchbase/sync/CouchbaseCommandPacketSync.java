@@ -63,15 +63,16 @@ public enum CouchbaseCommandPacketSync {
 
                 ViewResponse response = cb.query(view, query);
 
-                JsonArray ja = new JsonArray();
-
-                for (ViewRow row : response) {
-//                    System.out.println(row.getDocument());
-                    ja.add(row.getDocument());
-                }
+//                JsonArray ja = new JsonArray();
+//                for (ViewRow row : response) {
+//                    ja.add(row.getDocument());
+//                }
+//                result.putArray("result", ja);
 
                 result.putBoolean("success", true);
-                result.putArray("result", ja);
+                result.putArray("result", new JsonArray(response.getMap().values().toArray()));
+//                result.putObject("result", response.getMap().values());
+
                 return result;
 
             }

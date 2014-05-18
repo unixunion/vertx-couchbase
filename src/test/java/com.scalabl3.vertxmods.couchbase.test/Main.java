@@ -65,7 +65,7 @@ public class Main extends TestVerticle {
 
         System.out.println("\n\n\nDeploy Worker Verticle Couchbase Sync\n\n");
 
-        container.deployWorkerVerticle("com.scalabl3.vertxmods.couchbase.sync.CouchbaseEventBusSync", config, 1, true, new AsyncResultHandler<String>() {
+        container.deployWorkerVerticle("com.scalabl3.vertxmods.couchbase.sync.CouchbaseEventBusSync", config, 4, true, new AsyncResultHandler<String>() {
 
              @Override
             public void handle(AsyncResult<String> asyncResult) {

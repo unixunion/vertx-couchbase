@@ -45,7 +45,7 @@ public class QueryTests extends TestVerticle {
 
         System.out.println("\n\n\nDeploy Worker Verticle Couchbase Sync\n\n");
 
-        container.deployWorkerVerticle("com.scalabl3.vertxmods.couchbase.sync.CouchbaseEventBusSync", config, 1, true, new AsyncResultHandler<String>() {
+        container.deployWorkerVerticle("com.scalabl3.vertxmods.couchbase.sync.CouchbaseEventBusSync", config, 4, true, new AsyncResultHandler<String>() {
 
             @Override
             public void handle(AsyncResult<String> asyncResult) {
@@ -99,7 +99,8 @@ public class QueryTests extends TestVerticle {
                 @Override
                 public void handle(final Message<JsonObject> reply) {
                     try {
-
+                        // convert the 1st object in the respone.respons.result section of the reply message
+//                        System.out.println("reply was: " + reply.body());
                         User u = (User)Util.decode(reply.body()
                                 .getObject("response")
                                 .getObject("response")
