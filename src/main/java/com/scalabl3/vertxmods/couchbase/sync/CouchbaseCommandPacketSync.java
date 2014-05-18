@@ -1,10 +1,7 @@
 package com.scalabl3.vertxmods.couchbase.sync;
 
 import com.couchbase.client.CouchbaseClient;
-import com.couchbase.client.protocol.views.Query;
-import com.couchbase.client.protocol.views.View;
-import com.couchbase.client.protocol.views.ViewResponse;
-import com.couchbase.client.protocol.views.ViewRow;
+import com.couchbase.client.protocol.views.*;
 import net.spy.memcached.CASResponse;
 import net.spy.memcached.CASValue;
 import net.spy.memcached.PersistTo;
@@ -36,15 +33,30 @@ public enum CouchbaseCommandPacketSync {
         // views and whatnot
             @Override
             public JsonObject operation(CouchbaseClient cb, Message<JsonObject> message) throws Exception {
-                System.out.println("query called with message: " + message.body().toString());
+//                System.out.println("query called with message: " + message.body().toString());
                 String design_doc = message.body().getString("design_doc");
                 String view_name = message.body().getString("view_name");
-                String key = message.body().getString("key");
+                String key = message.body().getString("key", null);
+                JsonArray keys = message.body().getArray("keys", null);
+                String start_key = message.body().getString("start_key");
+                String end_key = message.body().getString("end_key");
                 Boolean include_docs = message.body().getBoolean("include_docs", true);
 
                 View view = cb.getView(design_doc, view_name);
                 Query query = new Query();
-                query.setKey(key);
+
+                // was key sent
+                if (key != null) {
+//                    System.out.println("key set to: " + key);
+                    query.setKey(key);
+                }
+
+                // was keys sent
+                if (keys != null) {
+//                    System.out.println("keys set to: " + keys.toString());
+                    query.setKeys(keys.toString());
+                }
+
                 query.setIncludeDocs(include_docs);
 
                 JsonObject result = new JsonObject();
@@ -54,10 +66,11 @@ public enum CouchbaseCommandPacketSync {
                 JsonArray ja = new JsonArray();
 
                 for (ViewRow row : response) {
-                    System.out.println(row.getDocument());
+//                    System.out.println(row.getDocument());
                     ja.add(row.getDocument());
                 }
 
+                result.putBoolean("success", true);
                 result.putArray("result", ja);
                 return result;
 

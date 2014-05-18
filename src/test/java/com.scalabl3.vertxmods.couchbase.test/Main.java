@@ -1,3 +1,5 @@
+package com.scalabl3.vertxmods.couchbase.test;
+
 import com.google.gson.Gson;
 import org.junit.Test;
 import org.vertx.java.core.AsyncResult;
@@ -9,6 +11,9 @@ import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.testtools.TestVerticle;
 import static org.vertx.testtools.VertxAssert.*;
+import com.scalabl3.vertxmods.couchbase.test.User;
+import com.scalabl3.vertxmods.couchbase.test.Util;
+
 
 import java.util.HashMap;
 import java.util.UUID;
@@ -25,31 +30,32 @@ public class Main extends TestVerticle {
     String address;
     JsonObject config;
 
+    // timers  and counters
+    long startTime;
+    long endTime;
+    long timeEnded;
+    Integer count = 0;
+    Integer count_max = 1;
+
+    // used to count async results and finalize tests
+    public void count() {
+        count=count+1;
+        if (count > count_max-1) {
+            endTime = System.currentTimeMillis();
+            timeEnded =  ((endTime-startTime) /1000);
+            System.out.println("rate achieved: " + (count_max/timeEnded) + " msgs/ps");
+            count_max=1;
+            count=0;
+            testComplete();
+        }
+    }
+
     @Override
     public void start() {
         initialize();
 
         EventBus eb = vertx.eventBus();
         config = new JsonObject();
-//        address = "vertx.couchbase.async";
-//
-//
-//        config.putString("address", address);
-//        config.putString("couchbase.nodelist", "localhost:8091");
-//        config.putString("couchbase.bucket", "default");
-//        config.putString("couchbase.bucket.password", "");
-//        config.putNumber("couchbase.timeout.ms", 10000);
-//        config.putNumber("couchbase.tasks.check.ms", 500);
-//        config.putNumber("couchbase.num.clients", 1);
-//
-//        System.out.println("\n\n\nDeploy Verticle Couchbase Async\n\n");
-//
-//        container.deployVerticle("com.scalabl3.vertxmods.couchbase.async.CouchbaseEventBusAsync", config, 1, new Handler<String>() {
-//            @Override
-//            public void handle(String s) {
-//
-//            }
-//        });
 
         config.putString("address", "vertx.couchbase.sync");
         config.putString("couchbase.nodelist", "localhost:8091");
@@ -84,32 +90,17 @@ public class Main extends TestVerticle {
 
     }
 
-    private String encode(Object val) {
-        // we need to encode the value portion of the object with this.
-        /*
-        EG: ADD object
-
-        JsonObject request = new JsonObject().putString("op", "ADD")
-                .putString("key", id.toString())
-                .putString("value", encode(new JsonObject()
-                        .putString("username", "user"+id.toString())
-                        .putString("password", "somepassword"))
-                )
-                .putNumber("expiry", 300)
-                .putBoolean("ack", true);
-
-         */
-        Gson gson = new Gson();
-        return gson.toJson(val);
-    }
-
+    // Simple method to add a User object, id is appended to Username
     public void add(Integer id) {
+
+        // Create a new user object via User class
+        User user = new User("user"+id, "somepassword");
+        String user_string = Util.encode(user);
+//        System.out.println("user_string: " + user_string);
+
         JsonObject request = new JsonObject().putString("op", "ADD")
                 .putString("key", id.toString())
-                .putString("value", encode(new JsonObject()
-                        .putString("username", "user"+id.toString())
-                        .putString("password", "somepassword"))
-                )
+                .putString("value", user_string)
                 .putNumber("expiry", 3600)
                 .putBoolean("ack", true);
 
@@ -119,14 +110,13 @@ public class Main extends TestVerticle {
             @Override
             public void handle(Message<JsonObject> reply) {
                 try {
-                    System.out.print(".");
                     JsonObject body = reply.body();
                     assertNotNull(body.toString());
-//                    testComplete();
+//                    System.out.println("OK");
+                    count();
                 } catch (Exception e) {
-                    System.out.print("!");
-//                    e.printStackTrace();
-//                    throw e;
+                    e.printStackTrace();
+                    fail("shit happens");
                 }
             }
         });
@@ -134,20 +124,16 @@ public class Main extends TestVerticle {
 
     @Test
     public void addBenchmark() {
-        long startTime = System.currentTimeMillis();
-        long endTime = 0;
+        startTime = System.currentTimeMillis();
+        endTime = 0;
 
-        for(int i=0; i < 100000; i++) {
+        // set the count_max before the test
+        count_max = 100000;
+        for(int i=0; i < count_max; i++) {
             add(i);
         }
-        endTime = System.currentTimeMillis();
-
-        long timeneeded =  ((endTime-startTime) /1000);
-
-        System.out.println("done in " + timeneeded + "seconds");
-        testComplete();
-
     }
+
 
     @Test
     public void get() {
@@ -173,12 +159,55 @@ public class Main extends TestVerticle {
         });
     }
 
+
+
+    public void query_key(Integer id) {
+
+         JsonObject request = new JsonObject().putString("op", "QUERY")
+                .putString("design_doc", "users")
+                .putString("view_name", "users")
+                .putString("key", "user" + id)
+                .putBoolean("include_docs", true)
+                .putBoolean("ack", true);
+
+        container.logger().debug("sending message to address: " + config.getString("address"));
+
+        vertx.eventBus().send(config.getString("address"), request, new Handler<Message<JsonObject>>() {
+
+            @Override
+            public void handle(final Message<JsonObject> reply) {
+                try {
+//                    System.out.println("Response: " + reply.body());
+                    JsonObject body = reply.body();
+
+//                    assertNotNull(body.toString());
+                    testComplete();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    throw e;
+                }
+            }
+        });
+    }
+
+
     @Test
-    public void query() {
+    public void query_single_key() {
+        add(99999);
+        query_key(99999);
+    }
+
+    @Test
+    public void query_keys() {
+        add(99991);
+        add(99992);
+
         JsonObject request = new JsonObject().putString("op", "QUERY")
                 .putString("design_doc", "users")
                 .putString("view_name", "users")
-                .putString("key", "user99990")
+                .putArray("keys", new JsonArray()
+                        .addString("user99991")
+                        .addString("user99992"))
                 .putBoolean("include_docs", true)
                 .putBoolean("ack", true);
 
@@ -188,7 +217,7 @@ public class Main extends TestVerticle {
             @Override
             public void handle(Message<JsonObject> reply) {
                 try {
-                    System.out.print("handler reply: " + reply.body().toString());
+                    System.out.println("Response: " + reply.body());
                     JsonObject body = reply.body();
                     assertNotNull(body.toString());
                     testComplete();
@@ -199,6 +228,7 @@ public class Main extends TestVerticle {
             }
         });
     }
+
 
     public void act(HashMap<String, Object> cmd)
     {

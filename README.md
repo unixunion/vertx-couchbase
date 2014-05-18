@@ -1,8 +1,15 @@
 # VertX mod CouchBase
 
-a couchbase eventbus worker.
-
+a couchbase eventbus worker. 
 This worker connects to your couchbase cluster and listens on the VertX eventbus for queries.
+
+This is a gradle-fied and modified version of scalabl3/vertx-couchbase, Things I am adding:
+
+VIEW based queries
+Boot class ( read config, boot async/sync mode )
+Testing ( sync )
+
+
 
 ## Building
 see "gradlew tasks"
@@ -49,9 +56,56 @@ java -jar some-fatjar.jar -cp $CONF_DIR -cluster -conf $CONF_DIR/config.json
 ```
 
 ## Usage
-Data is requests is posted to this module via vertx's eventbus.
 
-Simple Java Example
+### Query
+
+I have the following documents:
+
+```json
+{
+   "map": {
+       "username": "user10003",
+       "password": "somepassword"
+   }
+}
+```
+and the following view
+
+```js
+function (doc, meta) {
+  emit(doc.map.username, [meta.id, doc.map.password]);
+}
+```
+
+example query to send over eventbus in JSON.
+
+```json
+{
+    "op":"QUERY",
+    "design_doc":"users",
+    "view_name":"users",
+    "key":"user99990",
+    "include_docs":true,
+    "ack":true
+}
+```
+
+example of query construction in JAVA
+```java
+JsonObject request = new JsonObject().putString("op", "QUERY")
+        .putString("design_doc", "users")
+        .putString("view_name", "users")
+        .putString("key", "user99990")
+        .putBoolean("include_docs", true)
+        .putBoolean("ack", true);
+vertx.eventBus().send(config.getString("address"), request, new Handler<Message<JsonObject>>()...
+```
+
+### SET
+
+When creating documents, be sure to envode the valye portion with Gson
+
+Example
 ```java
 
 private String encode(Object val) {
@@ -68,15 +122,6 @@ JsonObject request = new JsonObject().putString("op", "ADD")
                 .putNumber("expiry", 300)
                 .putBoolean("ack", true);
                 
-vertx.eventBus().send("vertx.couchbase.sync", request, new Handler<Message<JsonObject>>() {
-            @Override
-            public void handle(Message<JsonObject> reply) {
-                try {
-                    System.out.print("done");
-                } catch (Exception e) {
-                    System.out.print("Error");
-                }
-            }
-        });
+vertx.eventBus().send("vertx.couchbase.sync", request, new Handler<Message<JsonObject>>()...
 
 ```

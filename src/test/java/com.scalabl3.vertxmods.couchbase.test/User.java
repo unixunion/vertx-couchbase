@@ -5,18 +5,37 @@
  * Time: 3:40 PM
  * To change this template use File | Settings | File Templates.
  */
-public class User extends ModelBase {
 
-    private String first_name;
-    private String last_name;
+package com.scalabl3.vertxmods.couchbase.test;
 
-    public User(String fname, String lname) {
-        this.first_name = fname;
-        this.last_name = lname;
+public class User {
+
+    private String username;
+    private String password;
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public User(String username, String password) {
+        this.username = username;
+        this.password = password;
     }
 
     @Override
     public String toString() {
-        return first_name + " " + last_name;
+        return "DataObject [username=" + username + ", password=" + password + "]";
     }
 }
