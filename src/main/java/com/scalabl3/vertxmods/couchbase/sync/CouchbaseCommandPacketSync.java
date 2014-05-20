@@ -60,8 +60,8 @@ public enum CouchbaseCommandPacketSync {
                 query.setIncludeDocs(include_docs);
                 JsonObject result = new JsonObject();
                 ViewResponse response = cb.query(view, query);
-                System.out.println("Response type: " + response.getClass().toString());
-                System.out.println("Response String: " + response.toString());
+//                System.out.println("Response type: " + response.getClass().toString());
+//                System.out.println("Response String: " + response.toString());
 
 
 

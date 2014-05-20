@@ -63,17 +63,16 @@ I have the following documents:
 
 ```json
 {
-   "map": {
-       "username": "user10003",
-       "password": "somepassword"
-   }
+   "username": "user10003",
+   "password": "somepassword"
 }
+
 ```
 and the following view
 
 ```js
 function (doc, meta) {
-  emit(doc.map.username, [meta.id, doc.map.password]);
+  emit([doc.username, doc.password], [doc.username]);
 }
 ```
 
@@ -84,7 +83,7 @@ example query to send over eventbus in JSON.
     "op":"QUERY",
     "design_doc":"users",
     "view_name":"users",
-    "key":"user99990",
+    "key":"[\"user0\",\"somepassword\"]",
     "include_docs":true,
     "ack":true
 }

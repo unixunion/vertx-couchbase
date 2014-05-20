@@ -128,7 +128,7 @@ public class Main extends TestVerticle {
         endTime = 0;
 
         // set the count_max before the test
-        count_max = 100000;
+        count_max = 1000;
         for(int i=0; i < count_max; i++) {
             add(i);
         }
