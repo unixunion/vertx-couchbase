@@ -43,7 +43,7 @@ public class Main extends TestVerticle {
         if (count > count_max-1) {
             endTime = System.currentTimeMillis();
             timeEnded =  ((endTime-startTime) /1000);
-            System.out.println("rate achieved: " + (count_max/timeEnded) + " msgs/ps");
+            System.out.println("rate achieved: " + (count_max+1/(timeEnded+1)) + " msgs/ps");
             count_max=1;
             count=0;
             testComplete();
@@ -62,10 +62,12 @@ public class Main extends TestVerticle {
         config.putString("couchbase.bucket", "ivault");
         config.putString("couchbase.bucket.password", "");
         config.putNumber("couchbase.num.clients", 1);
+        config.putBoolean("async_mode", false);
+
 
         System.out.println("\n\n\nDeploy Worker Verticle Couchbase Sync\n\n");
 
-        container.deployWorkerVerticle("com.scalabl3.vertxmods.couchbase.sync.CouchbaseEventBusSync", config, 4, true, new AsyncResultHandler<String>() {
+        container.deployWorkerVerticle("com.scalabl3.vertxmods.couchbase.Boot", config, 1, true, new AsyncResultHandler<String>() {
 
              @Override
             public void handle(AsyncResult<String> asyncResult) {
@@ -112,7 +114,6 @@ public class Main extends TestVerticle {
                 try {
                     JsonObject body = reply.body();
                     assertNotNull(body.toString());
-//                    System.out.println("OK");
                     count();
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -128,7 +129,7 @@ public class Main extends TestVerticle {
         endTime = 0;
 
         // set the count_max before the test
-        count_max = 1000;
+        count_max = 10000;
         for(int i=0; i < count_max; i++) {
             add(i);
         }

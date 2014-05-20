@@ -42,10 +42,11 @@ public class QueryTests extends TestVerticle {
         config.putString("couchbase.bucket", "ivault");
         config.putString("couchbase.bucket.password", "");
         config.putNumber("couchbase.num.clients", 1);
+        config.putBoolean("async_mods", false);
 
         System.out.println("\n\n\nDeploy Worker Verticle Couchbase Sync\n\n");
 
-        container.deployWorkerVerticle("com.scalabl3.vertxmods.couchbase.sync.CouchbaseEventBusSync", config, 1, true, new AsyncResultHandler<String>() {
+        container.deployWorkerVerticle("com.scalabl3.vertxmods.couchbase.Boot", config, 1, true, new AsyncResultHandler<String>() {
 
             @Override
             public void handle(AsyncResult<String> asyncResult) {
@@ -171,9 +172,7 @@ public class QueryTests extends TestVerticle {
 
             @Override
             public void handle(final Message<JsonObject> reply) {
-                System.out.println(reply.body().toString());
-
-
+                System.out.println("Reply: " + reply.body().toString());
 
                 try {
 //                    String r = reply.body().getObject("response").getObject("response").getArray("result").toString();
@@ -193,38 +192,38 @@ public class QueryTests extends TestVerticle {
     }
 
 
-    @Test
-    public void get_keys_nodocs() {
-        JsonObject request = new JsonObject().putString("op", "QUERY")
-                .putString("design_doc", "users")
-                .putString("view_name", "users")
-                .putString("key", "[\"user0\",\"somepassword\"]")
-                .putBoolean("include_docs", false)
-                .putBoolean("ack", true);
-
-        vertx.eventBus().send(config.getString("address"), request, new Handler<Message<JsonObject>>() {
-
-            @Override
-            public void handle(final Message<JsonObject> reply) {
-                System.out.println("Try to deserialize reply: " + reply.body().toString());
-
-                try {
-                       String f = reply.body()
-                            .getObject("response")
-                            .getObject("response")
-                            .getArray("result").get(0).toString();
-
-                       assertEquals("user0", f);
-                        testComplete();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    fail();
-                    throw e;
-
-                }
-            }
-        });
-    }
+//    @Test
+//    public void get_keys_nodocs() {
+//        JsonObject request = new JsonObject().putString("op", "QUERY")
+//                .putString("design_doc", "users")
+//                .putString("view_name", "users")
+//                .putString("key", "[\"user0\",\"somepassword\"]")
+//                .putBoolean("include_docs", false)
+//                .putBoolean("ack", true);
+//
+//        vertx.eventBus().send(config.getString("address"), request, new Handler<Message<JsonObject>>() {
+//
+//            @Override
+//            public void handle(final Message<JsonObject> reply) {
+//                System.out.println("Try to deserialize reply: " + reply.body().toString());
+//
+//                try {
+//                       String f = reply.body()
+//                            .getObject("response")
+//                            .getObject("response")
+//                            .getArray("result").get(0).toString();
+//
+//                       assertEquals("user0", f);
+//                        testComplete();
+//                } catch (Exception e) {
+//                    e.printStackTrace();
+//                    fail();
+//                    throw e;
+//
+//                }
+//            }
+//        });
+//    }
 
 //    @Test
 //    public void keyBenchmark() {

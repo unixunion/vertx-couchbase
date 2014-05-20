@@ -1,14 +1,5 @@
 package com.scalabl3.vertxmods.couchbase.async;
 
-import java.io.IOException;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeoutException;
-
 import com.couchbase.client.CouchbaseClient;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
@@ -18,6 +9,15 @@ import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.platform.Verticle;
+
+import java.io.IOException;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Couchbase 2.x client for vert.x<p>
@@ -37,7 +37,7 @@ public class CouchbaseEventBusAsync extends Verticle {
     private int taskCheckMillis;
 
     private EventBus eb;
-    private Logger logger = container.logger();
+    private Logger logger;
     private ArrayList<URI> couchbaseNodes;
     private List<CouchbaseFutureContainer> pending;
     private CouchbaseClient[] couchbaseClients;
@@ -45,6 +45,8 @@ public class CouchbaseEventBusAsync extends Verticle {
 
     @Override
     public void start() {
+        logger = container.logger();
+        logger.info("starting up async connectors");
         eb = vertx.eventBus();
         pending = new LinkedList<>();
         eventbusAddress = container.config().getString("address", "vertx.couchbase.async");

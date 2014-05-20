@@ -60,6 +60,8 @@ public enum CouchbaseCommandPacketSync {
                 query.setIncludeDocs(include_docs);
                 JsonObject result = new JsonObject();
                 ViewResponse response = cb.query(view, query);
+                result.putArray("result", new JsonArray(response.getMap().values().toArray()));
+
 //                System.out.println("Response type: " + response.getClass().toString());
 //                System.out.println("Response String: " + response.toString());
 
@@ -83,16 +85,16 @@ public enum CouchbaseCommandPacketSync {
 
 
                 result.putBoolean("success", true);
-                if (include_docs) {
-                    result.putArray("result", new JsonArray(response.getMap().values().toArray()));
-//                    result.putObject("result", data);
-                } else {
-                    for (ViewRow row : response) {
-                        result.putArray("result", new JsonArray(row.getValue()));
-                    }
-//                    result.putValue("result", response.getMap());
-                }
-//                result.putObject("result", response.getMap().values());
+//                if (include_docs) {
+//                    result.putArray("result", new JsonArray(response.getMap().values().toArray()));
+//
+//                } else {
+//                    for (ViewRow row : response) {
+//                        result.putArray("result", new JsonArray(row.getValue()));
+//                    }
+//
+//                }
+
 
                 return result;
 

@@ -1,5 +1,9 @@
 package com.scalabl3.vertxmods.couchbase.async;
 import com.couchbase.client.CouchbaseClient;
+import com.couchbase.client.internal.HttpFuture;
+import com.couchbase.client.protocol.views.Query;
+import com.couchbase.client.protocol.views.View;
+import com.couchbase.client.protocol.views.ViewResponse;
 import net.spy.memcached.CASResponse;
 import net.spy.memcached.CASValue;
 import net.spy.memcached.internal.BulkFuture;
@@ -21,6 +25,73 @@ import java.util.concurrent.TimeoutException;
 
 @SuppressWarnings("unchecked")
 public enum CouchbaseCommandPacketAsync {
+
+
+
+
+    /*
+       Query Views
+     */
+    QUERY() {
+        @Override
+        public Future operation(CouchbaseClient cb, Message<JsonObject> message) throws Exception {
+
+            String design_doc = message.body().getString("design_doc");
+            String view_name = message.body().getString("view_name");
+            String key = message.body().getString("key", null);
+            JsonArray keys = message.body().getArray("keys", null);
+            String start_key = message.body().getString("start_key");
+            String end_key = message.body().getString("end_key");
+            Boolean include_docs = message.body().getBoolean("include_docs", true);
+
+            View view = cb.getView(design_doc, view_name);
+            Query query = new Query();
+
+            // was key sent
+            if (key != null) {
+                query.setKey(key);
+            }
+
+            // was keys sent
+            if (keys != null) {
+                query.setKeys(String.valueOf(keys));
+            }
+
+            query.setIncludeDocs(include_docs);
+
+            HttpFuture<ViewResponse> response = cb.asyncQuery(view, query);
+            return response;
+
+        }
+
+        @Override
+        public JsonObject buildResponse(Message<JsonObject> message, Future future, boolean returnAcknowledgement) throws Exception {
+
+            if(!returnAcknowledgement) {
+                return null;
+            }
+
+            checkTimeout(future);
+
+            JsonObject response = createGenericResponse(message);
+            ViewResponse futureResponse = (ViewResponse)future.get();
+            response.putBoolean("success", true);
+
+
+            JsonObject result = new JsonObject();
+
+//            System.out.println("Future is: " + futureResponse.toString());
+
+            result.putArray("result", new JsonArray(futureResponse.getMap().values().toArray()));
+
+//            for (ViewRow row : futureResponse) {
+//                result.putArray("result", new JsonArray(row.getValue()));
+//            }
+
+            response.putObject("response", result);
+            return response;
+        }
+    },
 
 
     /*
