@@ -1,19 +1,19 @@
+package com.scalabl3.vertxmods.couchbase.test;
+
 import org.junit.Test;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.testtools.TestVerticle;
 
 import com.scalabl3.vertxmods.couchbase.test.Util;
 import com.scalabl3.vertxmods.couchbase.test.User;
 
-
-import static org.vertx.testtools.VertxAssert.assertNotNull;
-import static org.vertx.testtools.VertxAssert.assertTrue;
-import static org.vertx.testtools.VertxAssert.testComplete;
+import static org.vertx.testtools.VertxAssert.*;
 
 /**
  * Created by marzubus on 18/05/14.
@@ -45,7 +45,7 @@ public class QueryTests extends TestVerticle {
 
         System.out.println("\n\n\nDeploy Worker Verticle Couchbase Sync\n\n");
 
-        container.deployWorkerVerticle("com.scalabl3.vertxmods.couchbase.sync.CouchbaseEventBusSync", config, 4, true, new AsyncResultHandler<String>() {
+        container.deployWorkerVerticle("com.scalabl3.vertxmods.couchbase.sync.CouchbaseEventBusSync", config, 1, true, new AsyncResultHandler<String>() {
 
             @Override
             public void handle(AsyncResult<String> asyncResult) {
@@ -121,16 +121,122 @@ public class QueryTests extends TestVerticle {
     }
 
     @Test
-    public void keyBenchmark() {
-        startTime = System.currentTimeMillis();
-        endTime = 0;
+    public void get_keys() {
+        JsonObject request = new JsonObject().putString("op", "QUERY")
+                .putString("design_doc", "users")
+                .putString("view_name", "users")
+                .putString("key", "[\"user0\",\"somepassword\"]")
+                .putBoolean("include_docs", true)
+                .putBoolean("ack", true);
 
-        count_max=10000;
-        System.out.println("firing off queries");
-        for(int i=0; i < count_max; i++) {
-            query_key(i);
-        }
-        System.out.println("done, waiting for async");
+        vertx.eventBus().send(config.getString("address"), request, new Handler<Message<JsonObject>>() {
+
+            @Override
+            public void handle(final Message<JsonObject> reply) {
+                System.out.println("Try to deserialize reply: " + reply.body().toString());
+
+                try {
+                    User u = (User)Util.decode(reply.body()
+                            .getObject("response")
+                            .getObject("response")
+                            .getArray("result").get(0)
+                            .toString(), User.class );
+                    if ( u.getPassword().equals("somepassword")) {
+                        testComplete();
+                    } else {
+                        System.out.println("Error, password missmatch, check your data: " + u.getPassword() + " : " + u.toString());
+                        System.out.println("reply was: " + reply.body());
+                        fail();
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    fail();
+                    throw e;
+
+                }
+            }
+        });
     }
+
+    @Test
+    public void get_missing_keys() {
+        JsonObject request = new JsonObject().putString("op", "QUERY")
+                .putString("design_doc", "users")
+                .putString("view_name", "users")
+                .putString("key", "[\"user0\",\"nopass\"]")
+                .putBoolean("include_docs", true)
+                .putBoolean("ack", true);
+
+        vertx.eventBus().send(config.getString("address"), request, new Handler<Message<JsonObject>>() {
+
+            @Override
+            public void handle(final Message<JsonObject> reply) {
+                System.out.println(reply.body().toString());
+
+
+
+                try {
+//                    String r = reply.body().getObject("response").getObject("response").getArray("result").toString();
+                    assertEquals("[]", reply.body()
+                            .getObject("response")
+                            .getObject("response")
+                            .getArray("result")
+                            .toString());
+                    testComplete();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    fail();
+                    throw e;
+                }
+            }
+        });
+    }
+
+
+    @Test
+    public void get_keys_nodocs() {
+        JsonObject request = new JsonObject().putString("op", "QUERY")
+                .putString("design_doc", "users")
+                .putString("view_name", "users")
+                .putString("key", "[\"user0\",\"somepassword\"]")
+                .putBoolean("include_docs", false)
+                .putBoolean("ack", true);
+
+        vertx.eventBus().send(config.getString("address"), request, new Handler<Message<JsonObject>>() {
+
+            @Override
+            public void handle(final Message<JsonObject> reply) {
+                System.out.println("Try to deserialize reply: " + reply.body().toString());
+
+                try {
+                       String f = reply.body()
+                            .getObject("response")
+                            .getObject("response")
+                            .getArray("result").get(0).toString();
+
+                       assertEquals("user0", f);
+                        testComplete();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    fail();
+                    throw e;
+
+                }
+            }
+        });
+    }
+
+//    @Test
+//    public void keyBenchmark() {
+//        startTime = System.currentTimeMillis();
+//        endTime = 0;
+//
+//        count_max=10000;
+//        System.out.println("firing off queries");
+//        for(int i=0; i < count_max; i++) {
+//            query_key(i);
+//        }
+//        System.out.println("done, waiting for async");
+//    }
 
 }

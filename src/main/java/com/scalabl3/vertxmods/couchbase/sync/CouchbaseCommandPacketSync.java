@@ -54,23 +54,44 @@ public enum CouchbaseCommandPacketSync {
                 // was keys sent
                 if (keys != null) {
 //                    System.out.println("keys set to: " + keys.toString());
-                    query.setKeys(keys.toString());
+                    query.setKeys(String.valueOf(keys));
                 }
 
                 query.setIncludeDocs(include_docs);
-
                 JsonObject result = new JsonObject();
-
                 ViewResponse response = cb.query(view, query);
+                System.out.println("Response type: " + response.getClass().toString());
+                System.out.println("Response String: " + response.toString());
+
+
+
 
 //                JsonArray ja = new JsonArray();
 //                for (ViewRow row : response) {
 //                    ja.add(row.getDocument());
 //                }
 //                result.putArray("result", ja);
+//                System.out.println("Response from DB: " + response.toString());
+
+//                JsonObject data = new JsonObject();
+//                data = parseForJson(data, "value", response.toString());
+//                System.out.println("parseForJson: " + data.toString());
+
+//                Object value = getValue(message);
+//                System.out.println("getValue: " + value.toString());
+
+
 
                 result.putBoolean("success", true);
-                result.putArray("result", new JsonArray(response.getMap().values().toArray()));
+                if (include_docs) {
+                    result.putArray("result", new JsonArray(response.getMap().values().toArray()));
+//                    result.putObject("result", data);
+                } else {
+                    for (ViewRow row : response) {
+                        result.putArray("result", new JsonArray(row.getValue()));
+                    }
+//                    result.putValue("result", response.getMap());
+                }
 //                result.putObject("result", response.getMap().values());
 
                 return result;

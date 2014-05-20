@@ -101,7 +101,7 @@ public class Main extends TestVerticle {
         JsonObject request = new JsonObject().putString("op", "ADD")
                 .putString("key", id.toString())
                 .putString("value", user_string)
-                .putNumber("expiry", 3600)
+                .putNumber("expiry", 86400)
                 .putBoolean("ack", true);
 
         container.logger().debug("sending message to address: " + config.getString("address"));
