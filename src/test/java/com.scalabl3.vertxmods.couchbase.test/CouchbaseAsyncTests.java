@@ -8,7 +8,6 @@ import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.testtools.TestVerticle;
-
 import static org.vertx.testtools.VertxAssert.*;
 
 /**
@@ -22,6 +21,13 @@ public class CouchbaseAsyncTests extends TestVerticle{
 
     JsonObject config;
 
+    // timers
+    long startTime;
+    long endTime;
+    long timeEnded;
+    Integer count = 1;
+    Integer count_max = 1;
+
     @Override
     public void start() {
         initialize();
@@ -31,7 +37,7 @@ public class CouchbaseAsyncTests extends TestVerticle{
 
         config.putString("address", "vertx.couchbase.async");
         config.putString("couchbase.nodelist", "localhost:8091");
-        config.putString("couchbase.bucket", "ivault");
+        config.putString("couchbase.bucket", "default");
         config.putString("couchbase.bucket.password", "");
         config.putNumber("couchbase.num.clients", 1);
         config.putBoolean("async_mode", true);
@@ -64,28 +70,45 @@ public class CouchbaseAsyncTests extends TestVerticle{
 
     }
 
+    // used to count async results and finalize tests
+    public void count() {
+        count=count+1;
+        if (count > count_max-1) {
+            endTime = System.currentTimeMillis();
+            timeEnded =  ((endTime-startTime) /1000);
+            System.out.println("rate achieved: " + (count_max/timeEnded) + " msgs/ps");
+            count_max=1;
+            count=0;
+            testComplete();
+        }
+    }
+
+
     // Simple method to add a User object, id is appended to Username
-    public void add(Integer id) {
+    public void add(String username) {
 
         // Create a new user object via User class
-        User user = new User("user"+id, "somepassword");
+//        String hashed = BCrypt.hashpw("somepassword", BCrypt.gensalt(4));
+        String hashed = "somepassword";
+//        JsonObject reply = new JsonObject().putString("hashed", hashed);
+
+
+        User user = new User(username, hashed);
         String user_string = Util.encode(user);
 
         JsonObject request = new JsonObject().putString("op", "ADD")
-                .putString("key", id.toString())
+                .putString("key", user.getUsername())
                 .putString("value", user_string)
                 .putNumber("expiry", 86400)
                 .putBoolean("ack", true);
 
-        container.logger().info("sending message to address: " + config.getString("address"));
+        container.logger().debug("sending message to address: " + config.getString("address"));
 
         vertx.eventBus().send(config.getString("address"), request, new Handler<Message<JsonObject>>() {
             @Override
             public void handle(Message<JsonObject> reply) {
                 try {
-                    container.logger().info("Add response: " + reply.body().toString());
-                    JsonObject body = reply.body();
-                    assertNotNull(body.toString());
+                    container.logger().debug("Add response: " + reply.body().toString());
                 } catch (Exception e) {
                     e.printStackTrace();
                     fail("shit happens");
@@ -94,12 +117,12 @@ public class CouchbaseAsyncTests extends TestVerticle{
         });
     }
 
-    public void query_key(Integer id) {
+    public void query_key(String username) {
 
         JsonObject request = new JsonObject().putString("op", "QUERY")
                 .putString("design_doc", "users")
                 .putString("view_name", "users")
-                .putString("key", "user" + id)
+                .putString("key", username)
                 .putBoolean("include_docs", true)
                 .putBoolean("ack", true);
 
@@ -110,10 +133,7 @@ public class CouchbaseAsyncTests extends TestVerticle{
             @Override
             public void handle(final Message<JsonObject> reply) {
                 try {
-                    System.out.println("Response: " + reply.body());
-                    JsonObject body = reply.body();
-
-//                    assertNotNull(body.toString());
+                    container.logger().debug("Response: " + reply.body());
                     testComplete();
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -123,19 +143,33 @@ public class CouchbaseAsyncTests extends TestVerticle{
         });
     }
 
+    @Test
+    public void query_single_key() {
+        add("user" + 100001);
+        query_key("user" + 100001);
+    }
 
-//    @Test
-//    public void query_single_key() {
-//        add(100001);
-//        query_key(1000001);
-//    }
+    @Test
+    public void add_keys() {
+        count_max = 100000;
+        startTime = System.currentTimeMillis();
+
+        for(int i=0; i < count_max; i++) {
+            add("user" + i);
+            count();
+        }
+    }
 
     @Test
     public void get_keys() {
-        JsonObject request = new JsonObject().putString("op", "QUERY")
-                .putString("design_doc", "users")
-                .putString("view_name", "users")
-                .putString("key", "[\"user0\",\"somepassword\"]")
+
+        add("user" + 1001);
+
+        JsonObject request = new JsonObject().putString("op", "GET")
+//                .putString("design_doc", "users")
+//                .putString("view_name", "users")
+//                .putString("key", "[\"user0\",\"somepassword\"]")
+                .putString("key", "user1001")
                 .putBoolean("include_docs", true)
                 .putBoolean("ack", true);
 
@@ -146,12 +180,17 @@ public class CouchbaseAsyncTests extends TestVerticle{
                 System.out.println("Try to deserialize reply: " + reply.body().toString());
 
                 try {
-                    User u = (User)Util.decode(reply.body()
+//                    String hashed = BCrypt.hashpw("somepassword", BCrypt.gensalt(1));
+                    String user = reply.body()
                             .getObject("response")
-                            .getObject("response")
-                            .getArray("result").get(0)
-                            .toString(), User.class );
-                    if ( u.getPassword().equals("somepassword")) {
+                            .getObject("data")
+                            .getString("value");
+                    User u = (User)Util.decode(user, User.class );
+
+                    System.out.println("UserObject password: " + u.getPassword());
+
+//                    if (   u.getPassword().equals(hashed)) {
+                    if (BCrypt.checkpw("somepassword", u.getPassword())){
                         testComplete();
                     } else {
                         System.out.println("Error, password missmatch, check your data: " + u.getPassword() + " : " + u.toString());

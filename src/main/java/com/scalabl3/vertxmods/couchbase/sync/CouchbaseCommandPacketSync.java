@@ -557,15 +557,18 @@ public enum CouchbaseCommandPacketSync {
             // }
 
             JsonObject response = createGenericResponse(message);
+            JsonObject data = new JsonObject();
 
-            if (result.getBoolean("success")) {
-                response.putBoolean("success", true);
-            } else {
-                response.putBoolean("success", false);
-            }
+            response.putString("key", message.body().getString("key"));
+//            data = parseForJson(data, "value", result);
 
-            response.putObject("response", result);
+            if (result == null)
+                response.putBoolean("exists", false);
+            else
+                response.putBoolean("exists", true);
 
+            response.putObject("data", result.getObject("value"));
+            response.putBoolean("success", true);
             return response;
         }
     },

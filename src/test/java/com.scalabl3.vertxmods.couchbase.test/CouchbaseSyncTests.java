@@ -29,10 +29,10 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.json.JsonObject;
-import org.vertx.java.deploy.Verticle;
-import org.vertx.java.test.TestModule;
-import org.vertx.java.test.VertxConfiguration;
-import org.vertx.java.test.junit.VertxJUnit4ClassRunner;
+import org.vertx.java.platform.Verticle;
+//import org.vertx.java.test.TestModule;
+//import org.vertx.java.test.VertxConfiguration;
+//import org.vertx.java.test.junit.VertxJUnit4ClassRunner;
 
 import java.io.IOException;
 
