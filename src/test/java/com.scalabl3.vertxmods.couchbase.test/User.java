@@ -36,6 +36,6 @@ public class User {
 
     @Override
     public String toString() {
-        return "DataObject [username=" + username + ", password=" + password + "]";
+        return "UserObject [username=" + username + ", password=" + password + "]";
     }
 }
