@@ -1,7 +1,11 @@
-package org.vertx.mods;
+package com.scalabl3.vertxmods.couchbase;
 
-import com.sun.org.apache.xpath.internal.operations.Bool;
+import groovyjarjarantlr.debug.MessageAdapter;
+import org.vertx.java.busmods.BusModBase;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.eventbus.EventBus;
+import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.http.HttpClient;
 import org.vertx.java.core.http.HttpClientRequest;
 import org.vertx.java.core.http.HttpClientResponse;
@@ -22,10 +26,12 @@ import java.util.EnumSet;
     Class to manage buckets essentially
  */
 
-public class ClusterManager extends Verticle implements Handler<HttpClientResponse> {
+public class ClusterManager extends BusModBase {
 
     private HttpClient client;
     JsonObject config;
+
+    private EventBus eventBus;
 
     private AuthType authType; // use sasl
     private BucketType bucketType; // memcached / couch
@@ -39,27 +45,26 @@ public class ClusterManager extends Verticle implements Handler<HttpClientRespon
     private Number threadsNumber; // threads, default: 2
     private String host; // any host in the cluster
     private Integer port; // port, default: 8091
+    private String address;
 
 
-    @Override
-    public void handle(HttpClientResponse response) {
-        if (response.statusCode() != 200) {
-            throw new IllegalStateException("Invalid response, status: " + response.statusCode());
-        }
-        response.endHandler(new Handler() {
+    // handlers
+    private Handler<Message<JsonObject>> bucketHandler;
+    // the handler to call when a response is received, which will answer the final message
+    private Handler<HttpClientResponse> httpResponseHandler;
 
-            @Override
-            public void handle(Object event) {
-                count++;
-                if (count % 50 == 0) {
-                    eb.send("rate-counter", count);
-                    count = 0;
-                }
-                requestCredits++;
-                makeRequest();
-            }
-        });
-    }
+//    public void handle(HttpClientResponse response) {
+//
+//        if (response.statusCode() != 200) {
+//            throw new IllegalStateException("Invalid response, status: " + response.statusCode());
+//        }
+//        response.bodyHandler(new Handler<Buffer>() {
+//            public void handle(Buffer event) {
+//                container.logger().debug(event.toString());
+//            }
+//        });
+//
+//    }
 
 
     private enum BucketType {
@@ -70,28 +75,67 @@ public class ClusterManager extends Verticle implements Handler<HttpClientRespon
     }
 
     public void start() {
+        super.start();
 
-        authType = Enum.valueOf(AuthType.class, container.config().getString("authType"));
-        bucketType = Enum.valueOf(BucketType.class, container.config().getString("bucketType"));
-        flushEnabled = container.config().getBoolean("flushEnabled", false);
-        name = container.config().getString("name", "default");
-        proxyPort = container.config().getNumber("proxyPort");
-        ramQuotaMB = container.config().getNumber("ramQuotaMB");
-        replicaIndex = container.config().getBoolean("replicaIndex", true);
-        replicaNumber = container.config().getNumber("replicaNumber", 1);
-        saslPassword = container.config().getString("saslPassword", "");
-        threadsNumber = container.config().getInteger("threadsNumber", 2);
-        host = container.config().getString("mgmthost", "localhost");
-        port = container.config().getInteger("mgmtport", 8091);
+        eventBus = vertx.eventBus();
+//        authType = Enum.valueOf(AuthType.class, getOptionalStringConfig("authType", "none"));
+//        bucketType = Enum.valueOf(BucketType.class, getOptionalStringConfig("bucketType", "couchbase"));
+//        flushEnabled = getOptionalBooleanConfig("flushEnabled", false);
+//        name = getOptionalStringConfig("name", "default");
+//        proxyPort = getOptionalIntConfig("proxyPort", 11711);
+//        ramQuotaMB = getOptionalIntConfig("ramQuotaMB", 64);
+//        replicaIndex = getOptionalBooleanConfig("replicaIndex", true);
+//        replicaNumber = getOptionalIntConfig("replicaNumber", 1);
+//        saslPassword = getOptionalStringConfig("saslPassword", "");
+//        threadsNumber = getOptionalIntConfig("threadsNumber", 2);
 
+        host = getOptionalStringConfig("couchbase.mgmthost", "localhost");
+        port = getOptionalIntConfig("couchbase.mgmtport", 8091);
+        address = getMandatoryStringConfig("address") + ".mgmt.bucket";
         client = vertx.createHttpClient().setPort(port).setHost(host);
+
+        bucketHandler = new Handler<Message<JsonObject>>() {
+            public void handle(Message<JsonObject> message) {
+                getBuckets(message);
+            }
+        };
+        eb.registerHandler(address, bucketHandler);
+
+        container.logger().info("\n\n\nDeployed and listening on: " + address);
 
     }
 
-    // Retrieves all bucket and bucket operations information from a cluster.
-    public JsonObject getBucket(String bucket) {
+    // do the last mile request and respond to the original message with couch-response data
+    private void request(String url, final Message<JsonObject> message) {
 
-        String url;
+        httpResponseHandler = new Handler<HttpClientResponse>() {
+            @Override
+            public void handle(HttpClientResponse event) {
+                event.bodyHandler(new Handler<Buffer>() {
+                    @Override
+                    public void handle(Buffer event) {
+                        message.reply(event);
+                    }
+                });
+            }
+        };
+
+        HttpClientRequest request = client.get(url, httpResponseHandler);
+        makeRequest(request);
+
+    }
+
+    // returns all buckets
+    private void getBuckets(final Message<JsonObject> message) {
+        container.logger().debug("getBuckets called with message: " + message.body().toString());
+        getBucket(null, message);
+    }
+
+    // return the specified bucket
+    private void getBucket(String bucket, final Message<JsonObject> message) {
+
+        String url = null;
+        String body = null;
 
         if ( bucket == null ) {
             url =  "/pools/default/buckets";
@@ -99,16 +143,18 @@ public class ClusterManager extends Verticle implements Handler<HttpClientRespon
             url = "/pools/default/buckets/" + bucket;
         }
 
-        HttpClientRequest request = client.get(url, this);
+        request(url, message );
     };
 
 
-    public Boolean createBucket() {
-        String body = new JsonObject().putString("username", "user" + (int)(1000 * Math.random())).putString("password", "somepassword").toString();
-        HttpClientRequest foo = client.post("/login", this);
-        return true;
+    private void makeRequest(HttpClientRequest request, String body) {
+        request.headers().add("Content-Length", String.valueOf(body.length()));
+        request.write(body);
+        makeRequest(request);
     }
 
-
+    private void makeRequest(HttpClientRequest request) {
+        request.end();
+    }
 
 }

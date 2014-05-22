@@ -255,7 +255,7 @@ public class SyncAsync extends TestVerticle{
 
     private void pushHandle(JsonObject msg, Handler<Message<JsonObject>> replyHandler) {
         vertx.eventBus().send(async_config.getString("address"), msg, replyHandler);
-        vertx.eventBus().send(aync_config.getString("address"), msg, replyHandler);
+        vertx.eventBus().send(sync_config.getString("address"), msg, replyHandler);
     }
 
 

@@ -1,6 +1,12 @@
 package com.scalabl3.vertxmods.couchbase.test;
 
 import com.google.gson.Gson;
+import org.vertx.java.core.json.JsonObject;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.lang.reflect.Type;
 
 /**
