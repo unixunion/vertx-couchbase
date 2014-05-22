@@ -12,6 +12,8 @@ import javax.naming.ConfigurationException;
 import java.util.EnumSet;
 
 /**
+ * Create buckets and whatnot
+ *
  * Created by Kegan Holtzhausen on 21/05/14.
  */
 
@@ -28,20 +30,37 @@ public class ClusterManager extends Verticle implements Handler<HttpClientRespon
     private AuthType authType; // use sasl
     private BucketType bucketType; // memcached / couch
     private Boolean flushEnabled; // allow flushing or not.
-    private String name;
-    private Number proxyPort;
-    private Number ramQuotaMB;
-    private Boolean replicaIndex;
-    private Number replicaNumber;
-    private String saslPassword;
-    private Number threadsNumber;
-    private String host;
-    private Integer port;
+    private String name; // name of bucket
+    private Number proxyPort; // port
+    private Number ramQuotaMB; // RAM
+    private Boolean replicaIndex; // replicate indexs, default: true
+    private Number replicaNumber; // number of replicas, default: 1
+    private String saslPassword; // sasl password if using sasl
+    private Number threadsNumber; // threads, default: 2
+    private String host; // any host in the cluster
+    private Integer port; // port, default: 8091
+
 
     @Override
-    public void handle(HttpClientResponse event) {
-        
+    public void handle(HttpClientResponse response) {
+        if (response.statusCode() != 200) {
+            throw new IllegalStateException("Invalid response, status: " + response.statusCode());
+        }
+        response.endHandler(new Handler() {
+
+            @Override
+            public void handle(Object event) {
+                count++;
+                if (count % 50 == 0) {
+                    eb.send("rate-counter", count);
+                    count = 0;
+                }
+                requestCredits++;
+                makeRequest();
+            }
+        });
     }
+
 
     private enum BucketType {
         memcached, couchbase
@@ -55,7 +74,7 @@ public class ClusterManager extends Verticle implements Handler<HttpClientRespon
         authType = Enum.valueOf(AuthType.class, container.config().getString("authType"));
         bucketType = Enum.valueOf(BucketType.class, container.config().getString("bucketType"));
         flushEnabled = container.config().getBoolean("flushEnabled", false);
-        name = container.config().getString("name", "users");
+        name = container.config().getString("name", "default");
         proxyPort = container.config().getNumber("proxyPort");
         ramQuotaMB = container.config().getNumber("ramQuotaMB");
         replicaIndex = container.config().getBoolean("replicaIndex", true);
@@ -63,12 +82,25 @@ public class ClusterManager extends Verticle implements Handler<HttpClientRespon
         saslPassword = container.config().getString("saslPassword", "");
         threadsNumber = container.config().getInteger("threadsNumber", 2);
         host = container.config().getString("mgmthost", "localhost");
-        port = container.config().getInteger("mgmtport", 8080);
-
+        port = container.config().getInteger("mgmtport", 8091);
 
         client = vertx.createHttpClient().setPort(port).setHost(host);
 
     }
+
+    // Retrieves all bucket and bucket operations information from a cluster.
+    public JsonObject getBucket(String bucket) {
+
+        String url;
+
+        if ( bucket == null ) {
+            url =  "/pools/default/buckets";
+        } else {
+            url = "/pools/default/buckets/" + bucket;
+        }
+
+        HttpClientRequest request = client.get(url, this);
+    };
 
 
     public Boolean createBucket() {
@@ -76,8 +108,6 @@ public class ClusterManager extends Verticle implements Handler<HttpClientRespon
         HttpClientRequest foo = client.post("/login", this);
         return true;
     }
-
-
 
 
 
