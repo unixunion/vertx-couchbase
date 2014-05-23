@@ -14,12 +14,14 @@ import org.vertx.testtools.TestVerticle;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import static org.vertx.testtools.VertxAssert.*;
 
 /**
- Compare async vs sync results...
+ Compare async vs sync results and structures
  */
+
 public class SyncAsync extends TestVerticle{
 
     JsonObject async_config;
@@ -33,8 +35,10 @@ public class SyncAsync extends TestVerticle{
     Integer count_max = 1;
 
     // other
-    Integer post_count;
-
+    Integer post_count = 0;
+    Integer post_max = 2;
+    //Message[] posts = new Message[0];
+    List<Message> posts = new ArrayList<Message>();
 
     @Override
     public void start() {
@@ -59,7 +63,6 @@ public class SyncAsync extends TestVerticle{
         sync_config.putBoolean("async_mode", false);
 
 
-
         System.out.println("\n\nDeploy Worker Verticle Couchbase\n\n");
 
         container.deployWorkerVerticle("com.scalabl3.vertxmods.couchbase.Boot", async_config, 1, true, new AsyncResultHandler<String>() {
@@ -78,6 +81,11 @@ public class SyncAsync extends TestVerticle{
                         assertTrue(asyncResult.succeeded());
                         assertNotNull("deploymentID should not be null", asyncResult.result());
 
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
 
                         startTests();
                     }
@@ -104,8 +112,39 @@ public class SyncAsync extends TestVerticle{
         cbop.put("ack", true);
         act(cbop);
 
+//        cbop.put("key", "op_incr");
+//        cbop.put("value", encode(11));
+//        act(cbop);
+    }
+
+    @Test
+    public void testIncr() {
+        HashMap<String, Object> cbop = new HashMap<String, Object>();
+
+        ArrayList<String> x = new ArrayList<String>();
+        x.add("couchbase");
+        x.add("nuodb");
+
+        cbop.put("op", "incr");
+        cbop.put("ack", true);
         cbop.put("key", "op_incr");
-        cbop.put("value", encode(11));
+        cbop.put("by", 11);
+        act(cbop);
+    }
+
+
+    @Test
+    public void testDecr() {
+        HashMap<String, Object> cbop = new HashMap<String, Object>();
+
+        ArrayList<String> x = new ArrayList<String>();
+        x.add("couchbase");
+        x.add("nuodb");
+
+        cbop.put("op", "decr");
+        cbop.put("ack", true);
+        cbop.put("key", "op_incr");
+        cbop.put("by", 11);
         act(cbop);
     }
 
@@ -161,16 +200,6 @@ public class SyncAsync extends TestVerticle{
 //    }
 
 
-    public void post(String result) {
-
-        System.out.println("Result: " + result);
-        post_count=post_count+1;
-        if (post_count >=2) {
-
-            testComplete();
-            post_count = 0;
-        }
-    }
 
 
 
@@ -243,14 +272,67 @@ public class SyncAsync extends TestVerticle{
         return gson.fromJson(val, typeOfT);
     }
 
+    private void compare(Message m1, Message m2) {
+        System.out.println("comparing messages in " + m1.body() + " and " + m2.body());
+
+        JsonObject j1 = new JsonObject(m1.body().toString()).getObject("response");
+        JsonObject j2 = new JsonObject(m2.body().toString()).getObject("response");
+
+        assertEquals(j1.getBoolean("success"), j2.getBoolean("success"));
+        assertEquals(j1.getString("op"), j2.getString("op"));
+        assertEquals(j1.getString("key"), j2.getString("key"));
+
+        testComplete();
+        posts.clear();
+
+    }
+
+
+    // called with result of async / sync call, when count hits two, compare em!
+    public void post(Message result) {
+
+        System.out.println("Result: " + result.body());
+
+        post_count=post_count+1;
+//        posts[post_count] = result;
+        posts.add(result);
+
+        if (post_count >=2) {
+            post_count = 0;
+            compare(posts.get(0), posts.get(1));
+        }
+    }
+
+
+    // send both async and sync events
     private void push(JsonObject notif) {
-        Handler<Message<JsonObject>> replyHandler = new Handler<Message<JsonObject>>() {
-            public void handle(Message<JsonObject> message) {
-                System.out.println("received: \n" + message.body().encode());
-            }
-        };
-        vertx.eventBus().send(async_config.getString("address"), notif, replyHandler);
-        vertx.eventBus().send(sync_config.getString("address"), notif, replyHandler);
+        push(notif, true);
+        push(notif, false);
+    }
+
+    private void push(JsonObject notif, Boolean async) {
+
+        if (async) {
+
+            Handler<Message<JsonObject>> async_replyHandler = new Handler<Message<JsonObject>>() {
+                public void handle(Message<JsonObject> message) {
+                    System.out.println("async received: \n" + message.body().encode());
+                    post(message);
+                }
+            };
+            vertx.eventBus().send(async_config.getString("address"), notif, async_replyHandler);
+
+        } else {
+
+            Handler<Message<JsonObject>> sync_replyHandler = new Handler<Message<JsonObject>>() {
+                public void handle(Message<JsonObject> message) {
+                    System.out.println("sync received: \n" + message.body().encode());
+                    post(message);
+                }
+            };
+            vertx.eventBus().send(sync_config.getString("address"), notif, sync_replyHandler);
+
+        }
     }
 
     private void pushHandle(JsonObject msg, Handler<Message<JsonObject>> replyHandler) {

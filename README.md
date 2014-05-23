@@ -57,6 +57,102 @@ java -jar some-fatjar.jar -cp $CONF_DIR -cluster -conf $CONF_DIR/config.json
 
 ## Usage
 
+A note about Async vs Sync, Sync should be used if you need confirmation only after persistTo or replicateTo have 
+completed their quotas. Async mode does NOT support these yet until couch completes Observe. 
+
+see: http://www.couchbase.com/wiki/display/couchbase/Observe
+
+### General
+
+act method for building request json object
+
+```java
+
+    public void act(HashMap<String, Object> cmd) {
+        if (cmd == null)
+            return;
+    
+        JsonObject notif = new JsonObject();
+    
+        for (String key : cmd.keySet()) {
+            Object value = cmd.get(key);
+    
+            if (value != null) {
+                if (value instanceof byte[])
+                    notif.putBinary(key, (byte[]) value);
+                else if (value instanceof Boolean)
+                    notif.putBoolean(key, (Boolean) value);
+                else if (value instanceof Number)
+                    notif.putNumber(key, (Number) value);
+                else if (value instanceof String)
+                    notif.putString(key, (String) value);
+                else if (value instanceof JsonArray)
+                    notif.putArray(key, (JsonArray) value);
+            }
+        }
+        System.out.println("sent: \n" + notif.encode());
+        push(notif);
+    }
+
+```
+
+push method for sending the request
+
+```java
+
+    private void push(JsonObject notif, Boolean async) {
+
+        if (async) {
+
+            Handler<Message<JsonObject>> async_replyHandler = new Handler<Message<JsonObject>>() {
+                public void handle(Message<JsonObject> message) {
+                    System.out.println("async received: \n" + message.body().encode());
+                    post(message);
+                }
+            };
+            vertx.eventBus().send(async_config.getString("address"), notif, async_replyHandler);
+        
+        } else {
+
+            Handler<Message<JsonObject>> sync_replyHandler = new Handler<Message<JsonObject>>() {
+                public void handle(Message<JsonObject> message) {
+                    System.out.println("sync received: \n" + message.body().encode());
+                    post(message);
+                }
+            };
+            vertx.eventBus().send(sync_config.getString("address"), notif, sync_replyHandler);
+        
+        }
+    }
+
+```
+
+
+### SET
+
+```java
+
+    ArrayList<String> x = new ArrayList<String>();
+    x.add("couchbase");
+    x.add("nuodb");
+    
+    cbop.put("op", "set");
+    cbop.put("key", "op_get");
+    cbop.put("value", encode(x));
+    cbop.put("ack", true);
+    act(cbop);
+
+```
+
+
+  {"response":{"op":"SET","key":"op_get","timestamp":1400848439299,"success":true,"response":{"success":true,"cas":18924200704321}}}
+    Result: {"response":{"op":"SET","key":"op_get","timestamp":1400848439299,"success":true,"response":{"success":true,"cas":18924200704321}}}
+    async received: 
+    {"response":{"op":"SET","key":"op_get","timestamp":1400848439348,"success":true}}
+    Result: {"response":{"op":"SET","key":"op_get","timestamp":1400848439348,"success":true}}
+
+
+
 ### Query
 
 I have the following documents:

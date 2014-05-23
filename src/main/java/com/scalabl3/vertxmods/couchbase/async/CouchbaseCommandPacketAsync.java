@@ -108,18 +108,25 @@ public enum CouchbaseCommandPacketAsync {
         public Future operation(CouchbaseClient cb, Message<JsonObject> message) throws Exception {
             String key = getKey(message);
 
-            Long delta = message.body().getLong("delta") == null? 1L : message.body().getLong("delta");
-            Boolean create = message.body().getBoolean("create") == null ? true : message.body().getBoolean("create");
-            Long default_value = message.body().getLong("default_value") == null ? 0 : message.body().getLong("default_value");
+            Number by = message.body().getNumber("by") == null? 1 : message.body().getNumber("by");
+            OperationFuture<Long> operationFuture;
 
-            if (create) {
-                cb.incr(key, delta, default_value);
-                return null;
+            if (by == (int)by) {
+                operationFuture = cb.asyncIncr(key, (int)by);
+            } else {
+                operationFuture = cb.asyncIncr(key, (long)by);
             }
-            else {
-                OperationFuture<Long> operationFuture = cb.asyncIncr(key, delta);
-                return operationFuture;
-            }
+
+            return operationFuture;
+
+//            if (create) {
+//                cb.incr(key, delta, default_value);
+//                return null;
+//            }
+//            else {
+//
+//                return operationFuture;
+//            }
         }
 
         @Override
@@ -134,7 +141,7 @@ public enum CouchbaseCommandPacketAsync {
 
             response.putObject("data", data);
 
-            response.putString("future.get()", future.get().toString());
+//            response.putString("future.get()", future.get().toString());
 
             Long incr_val = (Long) future.get();
 
@@ -195,9 +202,6 @@ public enum CouchbaseCommandPacketAsync {
             String key = getKey(message);
 
             Object value = message.body().getField("value");
-
-            System.out.println("value: " + value.toString() + " is of type " + value.getClass().toString());
-
             int expires = message.body().getInteger("expiry") == null ? 0 : message.body().getInteger("expiry");
 
             OperationFuture<Boolean> future = cb.set(key, expires, value);

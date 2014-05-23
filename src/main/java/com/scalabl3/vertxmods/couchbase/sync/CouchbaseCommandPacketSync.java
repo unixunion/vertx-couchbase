@@ -125,12 +125,15 @@ public enum CouchbaseCommandPacketSync {
         public JsonObject operation(CouchbaseClient cb, Message<JsonObject> message) throws Exception {
 
             String key = getKey(message);
-            Integer delta = message.body().getInteger("offset") == null? 1 : message.body().getInteger("offset");
-            Integer default_value = message.body().getInteger("default") == null ? 0 : message.body().getInteger("default");
-            Integer expiry = message.body().getInteger("expiry") == null ? 0 : message.body().getInteger("expiry");
+            Number by = message.body().getNumber("by") == null? 1 : message.body().getNumber("by");
 
             JsonObject result = new JsonObject();
-            result.putNumber("result", cb.incr(key, delta, default_value, expiry));
+            if (by ==(int)by) {
+
+                result.putNumber("result", cb.incr(key, (int) by));
+            } else {
+                result.putNumber("result", cb.incr(key, (long)by));
+            }
             return result;
 
         }
@@ -147,6 +150,7 @@ public enum CouchbaseCommandPacketSync {
 
             response.putObject("data", data);
             Long incr_val = result.getLong("result");
+
             data.putNumber("value", incr_val);
 
             if (incr_val != -1) {
@@ -163,12 +167,14 @@ public enum CouchbaseCommandPacketSync {
         public JsonObject operation(CouchbaseClient cb, Message<JsonObject> message) throws Exception {
 
             String key = getKey(message);
-            Integer delta = message.body().getInteger("offset") == null? 1 : message.body().getInteger("offset");
-            Integer default_value = message.body().getInteger("default") == null ? 0 : message.body().getInteger("default");
-            Integer expiry = message.body().getInteger("expiry") == null ? 0 : message.body().getInteger("expiry");
+            Number by = message.body().getNumber("by") == null? 1 : message.body().getNumber("by");
 
             JsonObject result = new JsonObject();
-            result.putNumber("result", cb.decr(key, delta, default_value, expiry));
+            if (by ==(int)by) {
+                result.putNumber("result", cb.decr(key, (int) by));
+            } else {
+                result.putNumber("result", cb.decr(key, (long)by));
+            }
             return result;
         }
 
