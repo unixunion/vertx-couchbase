@@ -60,7 +60,7 @@ public class SyncAsync extends TestVerticle{
         sync_config = new JsonObject();
         sync_config.putString("address", "vertx.couchbase.sync");
         sync_config.putString("couchbase.nodelist", "localhost:8091");
-        sync_config.putString("couchbase.bucket", "default");
+        sync_config.putString("couchbase.bucket", "ivault");
         sync_config.putString("couchbase.bucket.password", "");
         sync_config.putNumber("couchbase.num.clients", 1);
         sync_config.putBoolean("async_mode", false);
@@ -134,6 +134,8 @@ public class SyncAsync extends TestVerticle{
         act(cbop);
     }
 
+
+
     @Test
     public void testIncr() {
         HashMap<String, Object> cbop = new HashMap<String, Object>();
@@ -156,6 +158,38 @@ public class SyncAsync extends TestVerticle{
         cbop.put("by", 11);
         act(cbop);
     }
+
+
+    @Test
+    public void aAdd_prepare() {
+        HashMap<String, Object> cbop = new HashMap<String, Object>();
+
+        cbop.put("op", "delete");
+        cbop.put("ack", true);
+        cbop.put("key", "op_add1");
+        cbop.put("value", encode(11));
+        act(cbop);
+
+//        cbop = new HashMap<String, Object>();
+//
+//        cbop.put("op", "set");
+//        cbop.put("ack", true);
+//        cbop.put("key", "op_add");
+//        cbop.put("value", encode(11));
+//        act(cbop);
+    }
+
+    @Test
+    public void testAdd() {
+        HashMap<String, Object> cbop = new HashMap<String, Object>();
+
+        cbop.put("op", "add");
+        cbop.put("ack", true);
+        cbop.put("key", "op_add1");
+        cbop.put("value", 11);
+        act(cbop);
+    }
+
 
 
 
@@ -287,6 +321,8 @@ public class SyncAsync extends TestVerticle{
         JsonObject j1 = new JsonObject(m1.body().toString()).getObject("response");
         JsonObject j2 = new JsonObject(m2.body().toString()).getObject("response");
 
+        assertEquals(j1.getBoolean("success"), true);
+        assertEquals(j2.getBoolean("success"), true);
         assertEquals(j1.getBoolean("success"), j2.getBoolean("success"));
         assertEquals(j1.getString("op"), j2.getString("op"));
         assertEquals(j1.getString("key"), j2.getString("key"));

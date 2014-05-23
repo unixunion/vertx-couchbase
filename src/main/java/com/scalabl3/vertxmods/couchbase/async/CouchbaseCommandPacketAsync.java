@@ -208,7 +208,7 @@ public enum CouchbaseCommandPacketAsync {
             PersistTo persistTo = (message.body().getInteger("persistTo") == null ? PersistTo.ZERO : PersistTo.values()[message.body().getInteger("persistTo")]);
             ReplicateTo replicateTo = (message.body().getInteger("replicateTo") == null ? ReplicateTo.ZERO : ReplicateTo.values()[message.body().getInteger("replicateTo")]);
 
-            System.out.println("persistTo: " + persistTo);
+//            System.out.println("persistTo: " + persistTo);
 
             OperationFuture<Boolean> future = cb.set(key, expires, value, persistTo, replicateTo);
 
@@ -235,8 +235,8 @@ public enum CouchbaseCommandPacketAsync {
             String key = getKey(message);
 
             Integer exp = message.body().getInteger("expiry") == null ? 0 : message.body().getInteger("expiry");
-            Integer persistTo = message.body().getInteger("persistTo") == null ? -1 : message.body().getInteger("persistTo");
-            Integer replicateTo = message.body().getInteger("replicateTo") == null ? -1 : message.body().getInteger("replicateTo");
+            PersistTo persistTo = (message.body().getInteger("persistTo") == null ? PersistTo.ZERO : PersistTo.values()[message.body().getInteger("persistTo")]);
+            ReplicateTo replicateTo = (message.body().getInteger("replicateTo") == null ? ReplicateTo.ZERO : ReplicateTo.values()[message.body().getInteger("replicateTo")]);
 
             Object value = message.body().getField("value");
             OperationFuture<Boolean> operationFuture = cb.add(key, exp, value);
@@ -250,8 +250,8 @@ public enum CouchbaseCommandPacketAsync {
             }
             checkTimeout(future);
             JsonObject response = createGenericResponse(message);
-            JsonObject data = new JsonObject();
-            response.putObject("data", data);
+//            JsonObject data = new JsonObject();
+//            response.putObject("data", data);
             boolean success = (Boolean)future.get();
             response.putBoolean("success", success);
             if (!success) {

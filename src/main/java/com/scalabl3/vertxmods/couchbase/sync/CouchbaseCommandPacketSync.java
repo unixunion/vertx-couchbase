@@ -217,11 +217,11 @@ public enum CouchbaseCommandPacketSync {
             String key = getKey(message);
             Object value = getValue(message);
             int expires = message.body().getInteger("expiry") == null ? 0 : message.body().getInteger("expiry");
-            PersistTo persistTo = (message.body().getInteger("persistTo") == null ? null : PersistTo.values()[message.body().getInteger("persistTo")]);
-            ReplicateTo replicateTo = (message.body().getInteger("replicateTo") == null ? null : ReplicateTo.values()[message.body().getInteger("replicateTo")]);
+            PersistTo persistTo = (message.body().getInteger("persistTo") == null ? PersistTo.ZERO : PersistTo.values()[message.body().getInteger("persistTo")]);
+            ReplicateTo replicateTo = (message.body().getInteger("replicateTo") == null ? ReplicateTo.ZERO : ReplicateTo.values()[message.body().getInteger("replicateTo")]);
 
             // Debug
-            System.out.println("value: " + value.toString() + " is of type " + value.getClass().toString());
+//            System.out.println("value: " + value.toString() + " is of type " + value.getClass().toString());
 
             OperationFuture<Boolean> op = cb.set(key, expires, value, persistTo, replicateTo);
 
@@ -245,7 +245,7 @@ public enum CouchbaseCommandPacketSync {
                 response.putBoolean("success", false);
             }
 
-            response.putObject("response", result);
+//            response.putObject("response", result);
             return response;
         }
     },
@@ -253,11 +253,20 @@ public enum CouchbaseCommandPacketSync {
         @Override
         public JsonObject operation(CouchbaseClient cb, Message<JsonObject> message) throws Exception {
 
+
+            /*
+            sync received:
+    {"response":{"op":"ADD","key":"op_add","timestamp":1400872921011,"success":false,"response":{"success":false,"cas":null}}}
+    Result: {"response":{"op":"ADD","key":"op_add","timestamp":1400872921011,"success":false,"response":{"success":false,"cas":null}}}
+    async received:
+    {"response":{"op":"ADD","key":"op_add","timestamp":1400872921061,"data":{},"success":false,"reason":"failed to fetch key 'op_add'"}
+             */
+
             String key = getKey(message);
             Object value = getValue(message);
             Integer exp = message.body().getInteger("expiry") == null ? 0 : message.body().getInteger("expiry");
-            PersistTo persistTo = (message.body().getInteger("persistTo") == null ? null : PersistTo.values()[message.body().getInteger("persistTo")]);
-            ReplicateTo replicateTo = (message.body().getInteger("replicateTo") == null ? null : ReplicateTo.values()[message.body().getInteger("replicateTo")]);
+            PersistTo persistTo = (message.body().getInteger("persistTo") == null ? PersistTo.ZERO : PersistTo.values()[message.body().getInteger("persistTo")]);
+            ReplicateTo replicateTo = (message.body().getInteger("replicateTo") == null ? ReplicateTo.ZERO : ReplicateTo.values()[message.body().getInteger("replicateTo")]);
 
             OperationFuture<Boolean> op = cb.add(key, exp, value, persistTo, replicateTo);
 
@@ -279,6 +288,7 @@ public enum CouchbaseCommandPacketSync {
                 response.putBoolean("success", true);
             } else {
                 response.putBoolean("success", false);
+                result.putString("reason", "failed to fetch key '" + getKey(message) + "'");
             }
 
             response.putObject("response", result);
