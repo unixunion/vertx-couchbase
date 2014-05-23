@@ -129,8 +129,7 @@ public enum CouchbaseCommandPacketSync {
 
             JsonObject result = new JsonObject();
             if (by ==(int)by) {
-
-                result.putNumber("result", cb.incr(key, (int) by));
+                result.putNumber("result", cb.incr(key, (int)by));
             } else {
                 result.putNumber("result", cb.incr(key, (long)by));
             }

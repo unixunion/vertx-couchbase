@@ -6,6 +6,8 @@ import com.couchbase.client.protocol.views.View;
 import com.couchbase.client.protocol.views.ViewResponse;
 import net.spy.memcached.CASResponse;
 import net.spy.memcached.CASValue;
+import net.spy.memcached.PersistTo;
+import net.spy.memcached.ReplicateTo;
 import net.spy.memcached.internal.BulkFuture;
 import net.spy.memcached.internal.GetFuture;
 import net.spy.memcached.internal.OperationFuture;
@@ -203,8 +205,12 @@ public enum CouchbaseCommandPacketAsync {
 
             Object value = message.body().getField("value");
             int expires = message.body().getInteger("expiry") == null ? 0 : message.body().getInteger("expiry");
+            PersistTo persistTo = (message.body().getInteger("persistTo") == null ? PersistTo.ZERO : PersistTo.values()[message.body().getInteger("persistTo")]);
+            ReplicateTo replicateTo = (message.body().getInteger("replicateTo") == null ? ReplicateTo.ZERO : ReplicateTo.values()[message.body().getInteger("replicateTo")]);
 
-            OperationFuture<Boolean> future = cb.set(key, expires, value);
+            System.out.println("persistTo: " + persistTo);
+
+            OperationFuture<Boolean> future = cb.set(key, expires, value, persistTo, replicateTo);
 
             return future;
         }

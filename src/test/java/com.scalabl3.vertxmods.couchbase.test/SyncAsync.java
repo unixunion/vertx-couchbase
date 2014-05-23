@@ -1,7 +1,9 @@
 package com.scalabl3.vertxmods.couchbase.test;
 
 import com.google.gson.Gson;
+import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.runners.MethodSorters;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
@@ -22,6 +24,7 @@ import static org.vertx.testtools.VertxAssert.*;
  Compare async vs sync results and structures
  */
 
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class SyncAsync extends TestVerticle{
 
     JsonObject async_config;
@@ -98,6 +101,7 @@ public class SyncAsync extends TestVerticle{
     }
 
 
+
     @Test
     public void testSet() {
         HashMap<String, Object> cbop = new HashMap<String, Object>();
@@ -117,13 +121,22 @@ public class SyncAsync extends TestVerticle{
 //        act(cbop);
     }
 
+
+    // create incr / decr dependency docs
+    @Test
+    public void aDecrIncr_prepare() {
+        HashMap<String, Object> cbop = new HashMap<String, Object>();
+
+        cbop.put("op", "set");
+        cbop.put("ack", true);
+        cbop.put("key", "op_incr");
+        cbop.put("value", encode(11));
+        act(cbop);
+    }
+
     @Test
     public void testIncr() {
         HashMap<String, Object> cbop = new HashMap<String, Object>();
-
-        ArrayList<String> x = new ArrayList<String>();
-        x.add("couchbase");
-        x.add("nuodb");
 
         cbop.put("op", "incr");
         cbop.put("ack", true);
@@ -136,10 +149,6 @@ public class SyncAsync extends TestVerticle{
     @Test
     public void testDecr() {
         HashMap<String, Object> cbop = new HashMap<String, Object>();
-
-        ArrayList<String> x = new ArrayList<String>();
-        x.add("couchbase");
-        x.add("nuodb");
 
         cbop.put("op", "decr");
         cbop.put("ack", true);
