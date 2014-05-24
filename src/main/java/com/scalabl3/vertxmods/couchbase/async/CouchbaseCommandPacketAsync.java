@@ -47,24 +47,12 @@ public enum CouchbaseCommandPacketAsync {
         public JsonObject buildResponse(Message<JsonObject> message, Future future, boolean returnAcknowledgement) throws Exception {
             checkTimeout(future);
             JsonObject response = createGenericResponse(message);
-            JsonObject data = null;
-            DesignDocument value = null;
 
-            try {
-                value = (DesignDocument) future.get();
-                data = new JsonObject(value.toJson());
-            } catch(Exception e) {
-                // DesignDoc not found
-                value = null;
-            }
+            DesignDocument value = (DesignDocument) future.get();
 
-            if (value == null)
-                response.putBoolean("exists", false);
-            else
-                response.putBoolean("exists", true);
-
-
-            response.putObject("data", data);
+            // if we made it this far its a success!
+            response.putBoolean("exists", true);
+            response.putObject("data", new JsonObject(value.toJson()));
             response.putBoolean("success", true);
 
             return response;

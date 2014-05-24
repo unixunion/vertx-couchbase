@@ -29,6 +29,7 @@ public enum CouchbaseCommandPacketSync {
             String design_doc = message.body().getString("design_doc");
 //            System.out.println("sync GETDESIGNDOC: getting " + design_doc);
             DesignDocument result = cb.getDesignDoc(design_doc);
+//            System.out.println(result.toJson());
             return new JsonObject(result.toJson());
         }
 
@@ -37,13 +38,8 @@ public enum CouchbaseCommandPacketSync {
 
             JsonObject response = createGenericResponse(message);
             JsonObject data = new JsonObject();
-//            System.out.println("Got result: " + result);
-
-            if (result == null)
-                response.putBoolean("exists", false);
-            else
-                response.putBoolean("exists", true);
-
+            // if we made it this far, it exists.
+            response.putBoolean("exists", true);
             response.putObject("data", result);
             response.putBoolean("success", true);
 

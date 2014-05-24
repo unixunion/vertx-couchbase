@@ -155,7 +155,7 @@ public class CouchbaseAsyncTests extends TestVerticle{
 
     @Test
     public void add_keys() {
-        count_max = 100000;
+        count_max = 15000;
         startTime = System.currentTimeMillis();
 
         for(int i=0; i < count_max; i++) {
@@ -211,7 +211,7 @@ public class CouchbaseAsyncTests extends TestVerticle{
             @Override
             public void handle(final Message<JsonObject> reply) {
                 System.out.println("Got response: " + reply.body());
-                assertEquals(false, Util.getResponse(reply).getBoolean("exists"));
+                assertEquals("error", reply.body().getString("status"));
                 testComplete();
             }
         });

@@ -84,6 +84,26 @@ public class CouchbaseSyncTests extends TestVerticle{
         });
     }
 
+
+    @Test
+    public void get_missing_design_document() {
+        JsonObject request = new JsonObject().putString("op", "GETDESIGNDOC")
+                .putString("design_doc", "dev_testdsds")
+                .putBoolean("ack", true);
+
+        System.out.println(request.toString());
+
+        vertx.eventBus().send(config.getString("address"), request, new Handler<Message<JsonObject>>() {
+
+            @Override
+            public void handle(final Message<JsonObject> reply) {
+//                System.out.println("Got Document : " + reply.body());
+                assertEquals("error", reply.body().getString("status"));
+                testComplete();
+            }
+        });
+    }
+
     @Before
     public void setUp() {
         this.println("@Before setUp");
