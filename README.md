@@ -126,7 +126,36 @@ push method for sending the request
     }
 
 ```
+### CREATEDESIGNDOC
 
+Create a design doc and views
+
+#### request
+```json
+
+{
+  "op": "CREATEDESIGNDOC",
+  "name": "dev_test1",
+  "value": "{\"language\":\"javascript\",\"views\":{\"view1\":{\"map\":\"function(a, b) {}\"}}}",
+  "ack": true
+}
+
+```
+
+#### response
+
+```json
+
+{
+  "response": {
+    "op": "CREATEDESIGNDOC",
+    "key": null,
+    "timestamp": 1400964336627,
+    "success": true
+  }
+}
+
+```
 
 ### GETDESIGNDOC
 

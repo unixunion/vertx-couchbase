@@ -32,19 +32,50 @@ public enum CouchbaseCommandPacketAsync {
 
 
     /*
-    Design Doc
+    Create Design Doc
+     */
+    CREATEDESIGNDOC() {
+        @Override
+        public Future operation(CouchbaseClient cb, Message<JsonObject> message) throws Exception {
+            String name = message.body().getString("name");
+            String value = message.body().getString("value");
+            HttpFuture<Boolean> f = cb.asyncCreateDesignDoc(name, value);
+            return f;
+        }
+
+        @Override
+        public JsonObject buildResponse(Message<JsonObject> message, Future future, boolean returnAcknowledgement) throws Exception {
+
+            if(!returnAcknowledgement) {
+                return null;
+            }
+
+            checkTimeout(future);
+            JsonObject response = createGenericResponse(message);
+            response.putBoolean("success", (Boolean)future.get());
+            return response;
+        }
+    },
+
+    /*
+    Get Design Doc
      */
     GETDESIGNDOC() {
         @Override
         public Future operation(CouchbaseClient cb, Message<JsonObject> message) throws Exception {
-            String design_doc = message.body().getString("design_doc");
-            System.out.println("GETDESIGNDOC: getting " + design_doc);
+            String design_doc = message.body().getString("name");
+//            System.out.println("GETDESIGNDOC: getting " + design_doc);
             HttpFuture<DesignDocument> f = cb.asyncGetDesignDoc(design_doc);
             return f;
         }
 
         @Override
         public JsonObject buildResponse(Message<JsonObject> message, Future future, boolean returnAcknowledgement) throws Exception {
+
+            if(!returnAcknowledgement) {
+                return null;
+            }
+
             checkTimeout(future);
             JsonObject response = createGenericResponse(message);
 

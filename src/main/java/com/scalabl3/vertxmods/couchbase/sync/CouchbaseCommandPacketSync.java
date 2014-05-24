@@ -2,6 +2,7 @@ package com.scalabl3.vertxmods.couchbase.sync;
 
 import com.couchbase.client.CouchbaseClient;
 //import com.couchbase.client.internal.HttpFuture;
+import com.couchbase.client.internal.HttpFuture;
 import com.couchbase.client.protocol.views.*;
 import net.spy.memcached.CASResponse;
 import net.spy.memcached.CASValue;
@@ -23,10 +24,38 @@ import java.util.concurrent.TimeoutException;
 @SuppressWarnings("unchecked")
 public enum CouchbaseCommandPacketSync {
 
+    /*
+    Create Design Doc
+    */
+    CREATEDESIGNDOC() {
+        @Override
+        public JsonObject operation(CouchbaseClient cb, Message<JsonObject> message) throws Exception {
+            String name = message.body().getString("name");
+            String value = message.body().getString("value");
+            HttpFuture<Boolean> f = cb.asyncCreateDesignDoc(name, value);
+            return new JsonObject().putBoolean("value", f.get());
+        }
+
+        @Override
+        public JsonObject buildResponse(Message<JsonObject> message, JsonObject result, boolean returnAcknowledgement) throws Exception {
+
+            if(!returnAcknowledgement) {
+                return null;
+            }
+
+            JsonObject response = createGenericResponse(message);
+            response.putBoolean("success", result.getBoolean("value"));
+            return response;
+        }
+    },
+
+    /*
+    get design doc
+     */
     GETDESIGNDOC() {
         @Override
         public JsonObject operation(CouchbaseClient cb, Message<JsonObject> message) throws Exception {
-            String design_doc = message.body().getString("design_doc");
+            String design_doc = message.body().getString("name");
 //            System.out.println("sync GETDESIGNDOC: getting " + design_doc);
             DesignDocument result = cb.getDesignDoc(design_doc);
 //            System.out.println(result.toJson());

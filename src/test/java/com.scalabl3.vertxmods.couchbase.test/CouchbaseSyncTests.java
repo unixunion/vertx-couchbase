@@ -1,5 +1,7 @@
 package com.scalabl3.vertxmods.couchbase.test;
 
+import com.couchbase.client.protocol.views.DesignDocument;
+import com.couchbase.client.protocol.views.ViewDesign;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -66,9 +68,69 @@ public class CouchbaseSyncTests extends TestVerticle{
 
 
     @Test
+    public void create_design_document() {
+
+        ViewDesign view1 = new ViewDesign(
+                "view1",
+                "function(a, b) {}"
+        );
+
+        DesignDocument dd = new DesignDocument("testtest");
+        dd.setView(view1);
+
+        JsonObject request = new JsonObject().putString("op", "CREATEDESIGNDOC")
+                .putString("name", "dev_test1")
+                .putString("value", dd.toJson())
+                .putBoolean("ack", true);
+
+        System.out.println(request.toString());
+
+        vertx.eventBus().send(config.getString("address"), request, new Handler<Message<JsonObject>>() {
+
+            @Override
+            public void handle(final Message<JsonObject> reply) {
+                assertEquals(true, Util.getResponse(reply).getBoolean("success"));
+                System.out.println("Got Response : " + reply.body());
+                testComplete();
+            }
+        });
+
+    }
+
+    @Test
+    public void create_design_document_error() {
+
+        ViewDesign view1 = new ViewDesign(
+                "view1",
+                "function(a, b) {}"
+        );
+
+        DesignDocument dd = new DesignDocument("testtest");
+        dd.setView(view1);
+
+        JsonObject request = new JsonObject().putString("op", "CREATEDESIGNDOC")
+                .putString("name", "dev_test1")
+                .putString("value", "error rorororro")
+                .putBoolean("ack", true);
+
+        System.out.println(request.toString());
+
+        vertx.eventBus().send(config.getString("address"), request, new Handler<Message<JsonObject>>() {
+
+            @Override
+            public void handle(final Message<JsonObject> reply) {
+                assertEquals(false, Util.getResponse(reply).getBoolean("success"));
+                System.out.println("Got Response : " + reply.body());
+                testComplete();
+            }
+        });
+
+    }
+
+    @Test
     public void get_design_document() {
         JsonObject request = new JsonObject().putString("op", "GETDESIGNDOC")
-                .putString("design_doc", "dev_test")
+                .putString("name", "dev_test")
                 .putBoolean("ack", true);
 
         System.out.println(request.toString());
