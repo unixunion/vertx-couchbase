@@ -1,5 +1,7 @@
 package com.scalabl3.vertxmods.couchbase.test;
 
+import com.couchbase.client.protocol.views.DesignDocument;
+import com.couchbase.client.protocol.views.ViewDesign;
 import org.junit.Test;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
@@ -9,9 +11,6 @@ import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.testtools.TestVerticle;
-
-import com.scalabl3.vertxmods.couchbase.test.Util;
-import com.scalabl3.vertxmods.couchbase.test.User;
 
 import static org.vertx.testtools.VertxAssert.*;
 
@@ -39,7 +38,7 @@ public class QueryTests extends TestVerticle {
 
         config.putString("address", "vertx.couchbase.sync");
         config.putString("couchbase.nodelist", "localhost:8091");
-        config.putString("couchbase.bucket", "ivault");
+        config.putString("couchbase.bucket", "default");
         config.putString("couchbase.bucket.password", "");
         config.putNumber("couchbase.num.clients", 1);
         config.putBoolean("async_mods", false);
@@ -85,6 +84,47 @@ public class QueryTests extends TestVerticle {
     }
 
 
+    /*
+
+    function (doc, meta) {
+      emit([doc.username, doc.password], [doc.username]);
+    }
+
+     */
+    @Test
+    public void create_design_document() {
+
+        ViewDesign view1 = new ViewDesign(
+                "users",
+                "function (doc, meta) {\n" +
+                        "  emit(doc.username, doc.password);\n" +
+                        "}"
+        );
+
+        DesignDocument dd = new DesignDocument("users");
+        dd.setView(view1);
+
+        JsonObject request = new JsonObject().putString("op", "CREATEDESIGNDOC")
+                .putString("name", "users")
+                .putString("value", dd.toJson())
+                .putBoolean("ack", true);
+
+        System.out.println(request.toString());
+
+        vertx.eventBus().send(config.getString("address"), request, new Handler<Message<JsonObject>>() {
+
+            @Override
+            public void handle(final Message<JsonObject> reply) {
+                System.out.println("Got Response : " + reply.body());
+                assertEquals(true, Util.getResponse(reply).getBoolean("success"));
+                testComplete();
+            }
+        });
+
+    }
+
+
+
     public void query_key(Integer i) {
             JsonObject request = new JsonObject().putString("op", "QUERY")
                     .putString("design_doc", "users")
@@ -126,7 +166,7 @@ public class QueryTests extends TestVerticle {
         JsonObject request = new JsonObject().putString("op", "QUERY")
                 .putString("design_doc", "users")
                 .putString("view_name", "users")
-                .putString("key", "[\"user0\",\"somepassword\"]")
+                .putArray("keys", new JsonArray().add("user1").add("user2"))
                 .putBoolean("include_docs", true)
                 .putBoolean("ack", true);
 
@@ -164,7 +204,7 @@ public class QueryTests extends TestVerticle {
         JsonObject request = new JsonObject().putString("op", "QUERY")
                 .putString("design_doc", "users")
                 .putString("view_name", "users")
-                .putString("key", "[\"user0\",\"nopass\"]")
+                .putString("key", "userZZZ")
                 .putBoolean("include_docs", true)
                 .putBoolean("ack", true);
 

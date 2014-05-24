@@ -183,7 +183,7 @@ public class CouchbaseAsyncTests extends TestVerticle{
         dd.setView(view1);
 
         JsonObject request = new JsonObject().putString("op", "CREATEDESIGNDOC")
-                .putString("name", "dev_test1")
+                .putString("name", "dev_test")
                 .putString("value", dd.toJson())
                 .putBoolean("ack", true);
 
