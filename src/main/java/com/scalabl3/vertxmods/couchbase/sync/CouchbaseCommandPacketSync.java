@@ -25,6 +25,31 @@ import java.util.concurrent.TimeoutException;
 public enum CouchbaseCommandPacketSync {
 
     /*
+    Delete Design Doc
+    */
+    DELETEDESIGNDOC() {
+        @Override
+        public JsonObject operation(CouchbaseClient cb, Message<JsonObject> message) throws Exception {
+            String name = message.body().getString("name");
+            JsonObject result = new JsonObject();
+            result.putBoolean("success", cb.deleteDesignDoc(name));
+            return result;
+        }
+
+        @Override
+        public JsonObject buildResponse(Message<JsonObject> message, JsonObject result, boolean returnAcknowledgement) throws Exception {
+
+            if(!returnAcknowledgement) {
+                return null;
+            }
+
+            JsonObject response = createGenericResponse(message);
+            response.putBoolean("success", result.getBoolean("success"));
+            return response;
+        }
+    },
+
+    /*
     Create Design Doc
     */
     CREATEDESIGNDOC() {

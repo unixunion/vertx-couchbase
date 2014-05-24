@@ -226,6 +226,42 @@ public class CouchbaseAsyncTests extends TestVerticle{
 
 
     @Test
+    public void get_xdelete_document() {
+        JsonObject request = new JsonObject().putString("op", "DELETEDESIGNDOC")
+                .putString("name", "dev_test")
+                .putBoolean("ack", true);
+
+        vertx.eventBus().send(config.getString("address"), request, new Handler<Message<JsonObject>>() {
+
+            @Override
+            public void handle(final Message<JsonObject> reply) {
+                assertEquals(true, Util.getResponse(reply).getBoolean("success"));
+                testComplete();
+            }
+        });
+    }
+
+//    @Test
+//    public void get_xdelete_document_error() {
+//        JsonObject request = new JsonObject().putString("op", "DELETEDESIGNDOC")
+//                .putString("name", "dedsadasdsav_test")
+//                .putBoolean("ack", true);
+//
+//        System.out.println(request.toString());
+//
+//        vertx.eventBus().send(config.getString("address"), request, new Handler<Message<JsonObject>>() {
+//
+//            @Override
+//            public void handle(final Message<JsonObject> reply) {
+//                System.out.println("Got Response : " + reply.body());
+//                assertEquals(false, Util.getResponse(reply).getBoolean("success"));
+//                testComplete();
+//            }
+//        });
+//    }
+
+
+    @Test
     public void get_design_document() {
         JsonObject request = new JsonObject().putString("op", "GETDESIGNDOC")
                 .putString("name", "dev_test")
@@ -241,7 +277,6 @@ public class CouchbaseAsyncTests extends TestVerticle{
             }
         });
     }
-
 
     @Test
     public void get_missing_design_document() {

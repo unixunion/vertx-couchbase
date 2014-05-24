@@ -220,6 +220,34 @@ Returns the design doc for a view.
 
 ```
 
+### DELETEDESIGNDOC
+
+#### request
+```json
+
+{
+  "op": "DELETEDESIGNDOC",
+  "name": "dev_test",
+  "ack": true
+}
+
+```
+
+#### response
+
+```json
+
+{
+  "response": {
+    "op": "DELETEDESIGNDOC",
+    "key": null,
+    "timestamp": 1400970226990,
+    "success": true
+  }
+}
+
+```
+
 ### SET
 
 ```java

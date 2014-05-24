@@ -4,7 +4,9 @@ import com.couchbase.client.protocol.views.DesignDocument;
 import com.couchbase.client.protocol.views.ViewDesign;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.runners.MethodSorters;
 import org.vertx.groovy.core.eventbus.EventBus;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
@@ -16,6 +18,7 @@ import org.vertx.testtools.TestVerticle;
 import java.io.IOException;
 import static org.vertx.testtools.VertxAssert.*;
 
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class CouchbaseSyncTests extends TestVerticle{
 
     private static EventBus eb;
@@ -96,6 +99,44 @@ public class CouchbaseSyncTests extends TestVerticle{
         });
 
     }
+
+    @Test
+    public void get_xdelete_document() {
+        JsonObject request = new JsonObject().putString("op", "DELETEDESIGNDOC")
+                .putString("name", "dev_test")
+                .putBoolean("ack", true);
+
+        System.out.println(request.toString());
+
+        vertx.eventBus().send(config.getString("address"), request, new Handler<Message<JsonObject>>() {
+
+            @Override
+            public void handle(final Message<JsonObject> reply) {
+                System.out.println("Got Response : " + reply.body());
+                assertEquals(true, Util.getResponse(reply).getBoolean("success"));
+                testComplete();
+            }
+        });
+    }
+
+//    @Test
+//    public void get_xdelete_document_error() {
+//        JsonObject request = new JsonObject().putString("op", "DELETEDESIGNDOC")
+//                .putString("name", "dedsadasdsav_test")
+//                .putBoolean("ack", true);
+//
+//        System.out.println(request.toString());
+//
+//        vertx.eventBus().send(config.getString("address"), request, new Handler<Message<JsonObject>>() {
+//
+//            @Override
+//            public void handle(final Message<JsonObject> reply) {
+//                System.out.println("Got Response : " + reply.body());
+//                assertEquals(false, Util.getResponse(reply).getBoolean("success"));
+//                testComplete();
+//            }
+//        });
+//    }
 
     @Test
     public void create_design_document_error() {

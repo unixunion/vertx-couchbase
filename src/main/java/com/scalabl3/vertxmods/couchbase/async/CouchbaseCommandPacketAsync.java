@@ -32,6 +32,32 @@ public enum CouchbaseCommandPacketAsync {
 
 
     /*
+    Delete Design Doc
+     */
+
+    DELETEDESIGNDOC() {
+        @Override
+        public Future operation(CouchbaseClient cb, Message<JsonObject> message) throws Exception {
+            String name = message.body().getString("name");
+            HttpFuture<Boolean> f = cb.asyncDeleteDesignDoc(name);
+            return f;
+        }
+
+        @Override
+        public JsonObject buildResponse(Message<JsonObject> message, Future future, boolean returnAcknowledgement) throws Exception {
+
+            if(!returnAcknowledgement) {
+                return null;
+            }
+
+            checkTimeout(future);
+            JsonObject response = createGenericResponse(message);
+            response.putBoolean("success", (Boolean)future.get());
+            return response;
+        }
+    },
+
+    /*
     Create Design Doc
      */
     CREATEDESIGNDOC() {
