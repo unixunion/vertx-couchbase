@@ -1,6 +1,7 @@
 package com.scalabl3.vertxmods.couchbase.sync;
 
 import com.couchbase.client.CouchbaseClient;
+//import com.couchbase.client.internal.HttpFuture;
 import com.couchbase.client.protocol.views.*;
 import net.spy.memcached.CASResponse;
 import net.spy.memcached.CASValue;
@@ -22,7 +23,33 @@ import java.util.concurrent.TimeoutException;
 @SuppressWarnings("unchecked")
 public enum CouchbaseCommandPacketSync {
 
+    GETDESIGNDOC() {
+        @Override
+        public JsonObject operation(CouchbaseClient cb, Message<JsonObject> message) throws Exception {
+            String design_doc = message.body().getString("design_doc");
+//            System.out.println("sync GETDESIGNDOC: getting " + design_doc);
+            DesignDocument result = cb.getDesignDoc(design_doc);
+            return new JsonObject(result.toJson());
+        }
 
+        @Override
+        public JsonObject buildResponse(Message<JsonObject> message, JsonObject result, boolean returnAcknowledgement) throws Exception {
+
+            JsonObject response = createGenericResponse(message);
+            JsonObject data = new JsonObject();
+//            System.out.println("Got result: " + result);
+
+            if (result == null)
+                response.putBoolean("exists", false);
+            else
+                response.putBoolean("exists", true);
+
+            response.putObject("data", result);
+            response.putBoolean("success", true);
+
+            return response;
+        }
+    },
     /*
     * Atomic Counter Operations
     * INCR, DECR
@@ -156,7 +183,7 @@ public enum CouchbaseCommandPacketSync {
                 response.putBoolean("success", true);
             } else {
                 response.putBoolean("success", false);
-                response.putString("reason", "Key doesn't exist, or is non-integer '" + getKey(message) + "'");
+                response.putString("reason", "Key doesn't exist, or value is non-number '" + getKey(message) + "'");
             }
             return response;
         }
@@ -195,7 +222,7 @@ public enum CouchbaseCommandPacketSync {
                 response.putBoolean("success", true);
             } else {
                 response.putBoolean("success", false);
-                response.putString("reason", "Key doesn't exist, or is non-integer '" + getKey(message) + "'");
+                response.putString("reason", "Key doesn't exist, or value is non-number '" + getKey(message) + "'");
             }
 
             return response;
@@ -252,15 +279,6 @@ public enum CouchbaseCommandPacketSync {
     ADD() {
         @Override
         public JsonObject operation(CouchbaseClient cb, Message<JsonObject> message) throws Exception {
-
-
-            /*
-            sync received:
-    {"response":{"op":"ADD","key":"op_add","timestamp":1400872921011,"success":false,"response":{"success":false,"cas":null}}}
-    Result: {"response":{"op":"ADD","key":"op_add","timestamp":1400872921011,"success":false,"response":{"success":false,"cas":null}}}
-    async received:
-    {"response":{"op":"ADD","key":"op_add","timestamp":1400872921061,"data":{},"success":false,"reason":"failed to fetch key 'op_add'"}
-             */
 
             String key = getKey(message);
             Object value = getValue(message);
@@ -820,7 +838,8 @@ public enum CouchbaseCommandPacketSync {
             } else if (value instanceof String) {
                 jsonObject.putString(key, (String) value);
             } else {
-                throw new Exception("unsupported object type");
+                System.out.println(value);
+                throw new Exception("unsupported object type: " + value.getClass());
             }
         }
         return jsonObject;

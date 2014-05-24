@@ -1,6 +1,7 @@
 package com.scalabl3.vertxmods.couchbase.async;
 import com.couchbase.client.CouchbaseClient;
 import com.couchbase.client.internal.HttpFuture;
+import com.couchbase.client.protocol.views.DesignDocument;
 import com.couchbase.client.protocol.views.Query;
 import com.couchbase.client.protocol.views.View;
 import com.couchbase.client.protocol.views.ViewResponse;
@@ -25,11 +26,50 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeoutException;
 
+
 @SuppressWarnings("unchecked")
 public enum CouchbaseCommandPacketAsync {
 
 
+    /*
+    Design Doc
+     */
+    GETDESIGNDOC() {
+        @Override
+        public Future operation(CouchbaseClient cb, Message<JsonObject> message) throws Exception {
+            String design_doc = message.body().getString("design_doc");
+            System.out.println("GETDESIGNDOC: getting " + design_doc);
+            HttpFuture<DesignDocument> f = cb.asyncGetDesignDoc(design_doc);
+            return f;
+        }
 
+        @Override
+        public JsonObject buildResponse(Message<JsonObject> message, Future future, boolean returnAcknowledgement) throws Exception {
+            checkTimeout(future);
+            JsonObject response = createGenericResponse(message);
+            JsonObject data = null;
+            DesignDocument value = null;
+
+            try {
+                value = (DesignDocument) future.get();
+                data = new JsonObject(value.toJson());
+            } catch(Exception e) {
+                // DesignDoc not found
+                value = null;
+            }
+
+            if (value == null)
+                response.putBoolean("exists", false);
+            else
+                response.putBoolean("exists", true);
+
+
+            response.putObject("data", data);
+            response.putBoolean("success", true);
+
+            return response;
+        }
+    },
 
 
 
