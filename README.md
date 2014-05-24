@@ -128,6 +128,45 @@ push method for sending the request
 ```
 
 
+### GETDESIGNDOC
+
+Returns the design doc for a view.
+
+#### request
+```json
+
+{
+    "op":"GETDESIGNDOC",
+    "design_doc":"dev_test",
+    "ack":true
+}
+
+```
+
+#### response
+
+```json
+
+{
+  "response": {
+    "op": "GETDESIGNDOC",
+    "key": null,
+    "timestamp": 1400959460270,
+    "exists": true,
+    "data": {
+      "language": "javascript",
+      "views": {
+        "test": {
+          "map": "function (doc, meta) {\n  emit(meta.id, null);\n}"
+        }
+      }
+    },
+    "success": true
+  }
+}
+
+```
+
 ### SET
 
 ```java

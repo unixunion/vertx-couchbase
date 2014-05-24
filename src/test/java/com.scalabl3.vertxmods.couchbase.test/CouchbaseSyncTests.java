@@ -71,11 +71,13 @@ public class CouchbaseSyncTests extends TestVerticle{
                 .putString("design_doc", "dev_test")
                 .putBoolean("ack", true);
 
+        System.out.println(request.toString());
+
         vertx.eventBus().send(config.getString("address"), request, new Handler<Message<JsonObject>>() {
 
             @Override
             public void handle(final Message<JsonObject> reply) {
-//                System.out.println("Got Document : " + reply.body());
+                System.out.println("Got Document : " + reply.body());
                 assertEquals(true, Util.getResponse(reply).getBoolean("exists"));
                 testComplete();
             }
