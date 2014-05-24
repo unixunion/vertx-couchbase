@@ -205,14 +205,6 @@ public class CouchbaseAsyncTests extends TestVerticle{
     @Test
     public void create_design_document_error() {
 
-        ViewDesign view1 = new ViewDesign(
-                "view1",
-                "function(a, b) {}"
-        );
-
-        DesignDocument dd = new DesignDocument("testtest");
-        dd.setView(view1);
-
         JsonObject request = new JsonObject().putString("op", "CREATEDESIGNDOC")
                 .putString("name", "dev_test1")
                 .putString("value", "error rorororro")

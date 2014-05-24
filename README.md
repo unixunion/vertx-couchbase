@@ -157,6 +157,30 @@ Create a design doc and views
 
 ```
 
+#### java example of request
+For ease, I recommend using 
+* com.couchbase.client.protocol.views.DesignDoc 
+* com.couchbase.client.protocol.views.ViewDesign
+
+Example
+
+```java
+
+        ViewDesign view1 = new ViewDesign(
+                "view1",
+                "function(a, b) {}"
+        );
+
+        DesignDocument dd = new DesignDocument("testtest");
+        dd.setView(view1);
+
+        JsonObject request = new JsonObject().putString("op", "CREATEDESIGNDOC")
+                .putString("name", "dev_test1")
+                .putString("value", dd.toJson())
+                .putBoolean("ack", true);
+                
+```
+
 ### GETDESIGNDOC
 
 Returns the design doc for a view.
