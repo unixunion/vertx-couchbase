@@ -2,7 +2,9 @@ package com.scalabl3.vertxmods.couchbase.test;
 
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.runners.MethodSorters;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
@@ -19,6 +21,7 @@ import java.io.InputStreamReader;
 
 import static org.vertx.testtools.VertxAssert.*;
 
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ClusterManagerTests extends TestVerticle {
 
     EventBus eb;
@@ -172,6 +175,26 @@ public class ClusterManagerTests extends TestVerticle {
             };
         });
     }
+
+    @Test
+    public void flushBucket() {
+        JsonObject request = new JsonObject()
+                .putString("management", "FLUSHBUCKET")
+                .putString("name", "test")
+                .putBoolean("ack", true);
+
+        container.logger().info("sending message " + request.toString() + " to address: " + address);
+
+        eb.send(address, request, new Handler<Message<JsonObject>>() {
+            @Override
+            public void handle(Message<JsonObject> event) {
+                container.logger().info("response: " + event.body());
+                assertTrue(getSuccess(event));
+                testComplete();
+            };
+        });
+    }
+
 
     // get the response success boolean out of the event
     public Boolean getSuccess(Message<JsonObject> event) {

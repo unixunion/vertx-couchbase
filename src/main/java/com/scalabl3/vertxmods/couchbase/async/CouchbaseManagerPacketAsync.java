@@ -20,6 +20,26 @@ import java.util.concurrent.Future;
 public enum CouchbaseManagerPacketAsync {
     /*
      Create Bucket
+
+     Request
+    {
+      "management": "CREATEBUCKET",
+      "name": "test",
+      "bucketType": "couchbase",
+      "memorySizeMB": 128,
+      "replicas": 0,
+      "authPassword": "",
+      "flushEnabled": true,
+      "ack": true
+    }
+
+    Response
+    {
+        "response": {
+            "success": true
+        }
+    }
+
       */
     CREATEBUCKET() {
 
@@ -63,9 +83,23 @@ public enum CouchbaseManagerPacketAsync {
      Create Port Bucket
 
      Request
+    {
+        "management": "CREATEPORTBUCKET",
+        "name": "test_port",
+        "bucketType": "couchbase", // couchbase OR membase
+        "memorySizeMB": 128,
+        "replicas": 0,
+        "port": 30000,
+        "flushEnabled": true,
+        "ack": true
+    }
 
      Response
-
+    {
+        "response": {
+            "success": true
+        }
+    }
       */
     CREATEPORTBUCKET() {
 
@@ -105,6 +139,24 @@ public enum CouchbaseManagerPacketAsync {
         }
     },
 
+    /*
+    Delete bucket
+
+    Request
+    {
+      "management": "DELETEBUCKET",
+      "name": "test_port",
+      "ack": true
+    }
+
+    Response
+    {
+        "response": {
+            "success": true
+        }
+    }
+
+     */
 
     DELETEBUCKET() {
 
@@ -137,6 +189,25 @@ public enum CouchbaseManagerPacketAsync {
             return response;
         }
     },
+
+    /*
+    Flush the buckets documents. This deletes ALL documents in the bucket!
+
+    Request
+    {
+      "management": "FLUSHBUCKET",
+      "name": "test",
+      "ack": true
+    }
+
+    Response
+    {
+        "response": {
+            "success": true
+        }
+    }
+
+     */
 
     FLUSHBUCKET() {
 
