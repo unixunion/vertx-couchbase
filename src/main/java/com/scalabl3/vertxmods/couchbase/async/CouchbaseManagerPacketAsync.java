@@ -4,8 +4,11 @@ import com.couchbase.client.ClusterManager;
 import com.couchbase.client.clustermanager.BucketType;
 import com.scalabl3.vertxmods.couchbase.CompletedFuture;
 import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Future;
 
 
@@ -117,6 +120,42 @@ public enum CouchbaseManagerPacketAsync {
             response.putBoolean("success", (Boolean)result.get());
 
             return response;
+        }
+    },
+
+    LISTBUCKETS() {
+
+        @Override
+        public Future operation(ClusterManager cm, Message<JsonObject> message) throws Exception {
+//            String name = message.body().getString("name");
+
+
+            JsonObject response = new JsonObject();
+
+            try {
+//                response.p
+                ArrayList l = (ArrayList)cm.listBuckets();
+                response.putArray("data", new JsonArray(l));
+                response.putBoolean("success", true);
+//                f = new CompletedFuture(response);
+            } catch (Exception e) {
+                e.printStackTrace();
+                response.putBoolean("success", false);
+            }
+
+            Future<List> f = new CompletedFuture(response);
+            return f;
+        }
+
+        @Override
+        public JsonObject buildResponse(Message<JsonObject> message, Future result, boolean returnAcknowledgement) throws Exception {
+
+            if(!returnAcknowledgement) {
+                return null;
+            }
+
+            JsonObject data = (JsonObject)result.get();
+            return data;
         }
     },
 

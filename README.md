@@ -207,6 +207,30 @@ Deletes all documents in a bucket
 
 ```
 
+### LISTBUCKETS
+
+#### request
+```json
+{
+    "management":"LISTBUCKETS",
+    "ack":true
+}
+```
+
+#### response
+```json
+{
+  "response": {
+    "data": [
+      "async",
+      "default",
+      "sync"
+    ],
+    "success": true
+  }
+}
+```
+
 ### CREATEDESIGNDOC
 
 Create a design doc and views

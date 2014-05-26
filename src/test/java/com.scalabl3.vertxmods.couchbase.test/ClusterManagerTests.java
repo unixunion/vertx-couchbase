@@ -138,6 +138,22 @@ public class ClusterManagerTests extends TestVerticle {
         });
     }
 
+    @Test
+    public void listBuckets() {
+        JsonObject request = new JsonObject()
+                .putString("management", "LISTBUCKETS")
+                .putBoolean("ack", true);
+
+        container.logger().info("sending message " + request.toString() + " to address: " + address);
+
+        eb.send(address, request, new Handler<Message<JsonObject>>() {
+            @Override
+            public void handle(Message<JsonObject> event) {
+                container.logger().info("response: " + event.body());
+                testComplete();
+            };
+        });
+    }
 
 
 }
