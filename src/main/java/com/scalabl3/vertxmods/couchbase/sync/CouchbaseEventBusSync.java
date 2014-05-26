@@ -1,13 +1,8 @@
 package com.scalabl3.vertxmods.couchbase.sync;
 
-import java.io.IOException;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
-
+import com.couchbase.client.ClusterManager;
 import com.couchbase.client.CouchbaseClient;
-import com.google.gson.Gson;
+import com.scalabl3.vertxmods.couchbase.ParseNodeList;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
@@ -16,6 +11,12 @@ import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.platform.Verticle;
+
+import java.io.IOException;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 
 
 /**
@@ -35,6 +36,9 @@ import org.vertx.java.platform.Verticle;
 public class CouchbaseEventBusSync extends Verticle {
     private String eventbusAddress;
     private String cbnodes;
+    private String manager_username;
+    private String manager_password;
+    private Boolean manager_connect;
     private String bucket;
     private String bucketPassword;
 
@@ -42,6 +46,7 @@ public class CouchbaseEventBusSync extends Verticle {
     private Logger logger;
     private ArrayList<URI> couchbaseNodes;
     private CouchbaseClient[] couchbaseClients;
+    private ClusterManager clusterManager;
 
     @Override
     public void start() {
@@ -51,6 +56,9 @@ public class CouchbaseEventBusSync extends Verticle {
         // configurations
         eventbusAddress = container.config().getString("address", "vertx.couchbase.sync");
         cbnodes = container.config().getString("couchbase.nodelist", "localhost:8091");
+        manager_username = container.config().getString("couchbase.manager.username");
+        manager_password = container.config().getString("couchbase.manager.password");
+        manager_connect = container.config().getBoolean("couchbase.manager", false);
         bucket = container.config().getString("couchbase.bucket", "ivault");
         bucketPassword = container.config().getString("couchbase.bucket.password", "");
         int connections = container.config().getNumber("couchbase.num.clients", 1).intValue();
@@ -78,7 +86,8 @@ public class CouchbaseEventBusSync extends Verticle {
             String command = CouchbaseCommandPacketSync.voidNull(message.body().getString("op"));
 
             if (command.isEmpty()) {
-                sendError(message, "\"op\" property is mandatory for request");
+                sendError(message, "\"op\" property is mandatory for request, management NOT supported here yet, please " +
+                        "send management commands to a async worker instance");
                 return;
             }
             try {
@@ -118,6 +127,11 @@ public class CouchbaseEventBusSync extends Verticle {
         reply.putString("message", errMsg);
 
         message.reply(reply);
+    }
+
+    private void connectClusterManager() throws IOException {
+        container.logger().info("Connecting manager");
+        clusterManager = new ClusterManager(ParseNodeList.getAddresses(cbnodes), manager_username, manager_password);
     }
 
     private void connectCouchbaseClients(int connections) throws IOException {

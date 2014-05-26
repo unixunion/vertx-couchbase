@@ -1,6 +1,8 @@
 package com.scalabl3.vertxmods.couchbase.async;
 
+import com.couchbase.client.ClusterManager;
 import com.couchbase.client.CouchbaseClient;
+import com.scalabl3.vertxmods.couchbase.ParseNodeList;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
@@ -31,6 +33,9 @@ import java.util.concurrent.TimeoutException;
 public class CouchbaseEventBusAsync extends Verticle {
     private String eventbusAddress;
     private String cbnodes;
+    private String manager_username;
+    private String manager_password;
+    private Boolean manager_connect;
     private String bucket;
     private String bucketPassword;
     private int timeOutMillis;
@@ -41,6 +46,8 @@ public class CouchbaseEventBusAsync extends Verticle {
     private ArrayList<URI> couchbaseNodes;
     private List<CouchbaseFutureContainer> pending;
     private CouchbaseClient[] couchbaseClients;
+    private ClusterManager clusterManager;
+
     private long timerTaskId = -1;
 
     @Override
@@ -51,11 +58,15 @@ public class CouchbaseEventBusAsync extends Verticle {
         pending = new LinkedList<>();
         eventbusAddress = container.config().getString("address", "vertx.couchbase.async");
         cbnodes = container.config().getString("couchbase.nodelist");
+        manager_username = container.config().getString("couchbase.manager.username");
+        manager_password = container.config().getString("couchbase.manager.password");
+        manager_connect = container.config().getBoolean("couchbase.manager", false);
         bucket = container.config().getString("couchbase.bucket", "default");
         bucketPassword = container.config().getString("couchbase.bucket.password", "");
         timeOutMillis = container.config().getNumber("couchbase.timeout.ms", 10000).intValue();
         taskCheckMillis = container.config().getNumber("couchbase.tasks.check.ms", 50).intValue();
         int connections = container.config().getNumber("couchbase.num.clients", 1).intValue();
+
         // init connection pool
         try {
             connectCouchbaseClients(connections);
@@ -63,7 +74,16 @@ public class CouchbaseEventBusAsync extends Verticle {
             e.printStackTrace();
         }
 
-        // register verticle
+        // init manager connection
+        if (manager_connect) {
+            try {
+                connectClusterManager();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        // register verticle here, since during testing we dont have buckets yet and need the manager commands.
         eb.registerHandler(eventbusAddress, memHandler, new AsyncResultHandler<Void>() {
             @Override
             public void handle(AsyncResult<Void> voidAsyncResult) {
@@ -75,22 +95,42 @@ public class CouchbaseEventBusAsync extends Verticle {
     Handler<Message<JsonObject>> memHandler = new Handler<Message<JsonObject>>() {
         public void handle(Message<JsonObject> message) {
             String command = CouchbaseCommandPacketAsync.voidNull(message.body().getString("op"));
+            String management_command = CouchbaseCommandPacketAsync.voidNull(message.body().getString("management"));
 
-            if (command.isEmpty()) {
-                sendError(message, "\"op\" property is mandatory for request");
+            if (command.isEmpty() && management_command.isEmpty()) {
+                sendError(message, "\"op\" OR \"management\" property is mandatory for request");
                 return;
             }
+
+            if (!command.isEmpty() && !management_command.isEmpty()) {
+                sendError(message, "cannot perform OP and MANAGEMENT at the same time, choose one!");
+            }
+
             try {
 
-                CouchbaseCommandPacketAsync cbcp = getByName(command);
-                Future f = cbcp.operation(getCBClient(), message);
+                CouchbaseCommandPacketAsync cbcp = null;
+                CouchbaseManagerPacketAsync cbmp = null;
+                Future f = null;
+
+                if (!command.isEmpty()) {
+                    cbcp = getByName(command);
+                    f = cbcp.operation(getCBClient(), message);
+                } else if (!management_command.isEmpty()) {
+                    cbmp = getMgmtByName(management_command);
+                    f = cbmp.operation(getCMClient(), message);
+                } else {
+                    sendError(message, "unable to route command to a client / manager");
+                }
 
                 if (f.isDone()) {
                     if (requiresAcknowledgement(message)) {
-                        acknowledge(message, cbcp.buildResponse(message, f, requiresAcknowledgement(message)));
+                        if (!command.isEmpty()) {
+                            acknowledge(message, cbcp.buildResponse(message, f, requiresAcknowledgement(message)));
+                        } else if (!management_command.isEmpty()) {
+                            acknowledge(message, cbmp.buildResponse(message, f, requiresAcknowledgement(message)));
+                        }
                     }
                 } else {
-
                     CouchbaseFutureContainer cbfuture = new CouchbaseFutureContainer(f, message, cbcp);
                     pending.add(cbfuture);
                     if (timerTaskId == -1) {
@@ -142,10 +182,12 @@ public class CouchbaseEventBusAsync extends Verticle {
             } catch (TimeoutException e) {
                 sendError(message, "operation '" + command + "' timed out");
             } catch (IllegalArgumentException e) {
-                sendError(message, "unknown command: '" + command + "'");
+                e.printStackTrace();
+                sendError(message, "unknown command: '" + command + "'" + management_command);
             } catch (ExecutionException e) {
                 sendError(message, "operation '" + command + "' failed");
             } catch (Exception e) {
+                e.printStackTrace();
                 sendError(message, e.getMessage());
             }
         }
@@ -169,7 +211,17 @@ public class CouchbaseEventBusAsync extends Verticle {
         message.reply(reply);
     }
 
+    private void connectClusterManager() throws IOException {
+        container.logger().info("Connecting ClusterManager");
+        clusterManager = new ClusterManager(ParseNodeList.getAddresses(cbnodes), manager_username, manager_password);
+    }
+
+    private ClusterManager getCMClient() {
+        return clusterManager;
+    }
+
     private void connectCouchbaseClients(int connections) throws IOException {
+        container.logger().info("Connecting CouchbaseClients");
         couchbaseClients = new CouchbaseClient[connections < 1 ? 1 : connections];
         for (int i = 0; i < couchbaseClients.length; i++) {
             couchbaseClients[i] = new CouchbaseClient(ParseNodeList.getAddresses(cbnodes), bucket, bucketPassword);
@@ -188,4 +240,12 @@ public class CouchbaseEventBusAsync extends Verticle {
         }
         return CouchbaseCommandPacketAsync.valueOf(name.toUpperCase());
     }
+
+    private CouchbaseManagerPacketAsync getMgmtByName(String name) {
+        if (name == null) {
+            return null;
+        }
+        return CouchbaseManagerPacketAsync.valueOf(name.toUpperCase());
+    }
+
 }

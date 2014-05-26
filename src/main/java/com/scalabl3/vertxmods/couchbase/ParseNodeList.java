@@ -1,4 +1,4 @@
-package com.scalabl3.vertxmods.couchbase.sync; /**
+package com.scalabl3.vertxmods.couchbase; /**
  * Created with IntelliJ IDEA.
  * User: jasdeep
  * Date: 5/17/13

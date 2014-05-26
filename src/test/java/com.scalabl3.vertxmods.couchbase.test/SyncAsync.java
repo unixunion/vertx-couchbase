@@ -1,6 +1,8 @@
 package com.scalabl3.vertxmods.couchbase.test;
 
 import com.google.gson.Gson;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
@@ -13,6 +15,7 @@ import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.testtools.TestVerticle;
 
+import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -49,22 +52,8 @@ public class SyncAsync extends TestVerticle{
 
         EventBus eb = vertx.eventBus();
 
-        async_config = new JsonObject();
-        async_config.putString("address", "vertx.couchbase.async");
-        async_config.putString("couchbase.nodelist", "localhost:8091");
-        async_config.putString("couchbase.bucket", "default");
-        async_config.putString("couchbase.bucket.password", "");
-        async_config.putNumber("couchbase.num.clients", 1);
-        async_config.putBoolean("async_mode", true);
-
-        sync_config = new JsonObject();
-        sync_config.putString("address", "vertx.couchbase.sync");
-        sync_config.putString("couchbase.nodelist", "localhost:8091");
-        sync_config.putString("couchbase.bucket", "ivault");
-        sync_config.putString("couchbase.bucket.password", "");
-        sync_config.putNumber("couchbase.num.clients", 1);
-        sync_config.putBoolean("async_mode", false);
-
+        async_config = Util.loadConfig(this, "/conf-async.json");
+        sync_config = Util.loadConfig(this, "/conf-sync.json");
 
         System.out.println("\n\nDeploy Worker Verticle Couchbase\n\n");
 
@@ -97,6 +86,83 @@ public class SyncAsync extends TestVerticle{
             }
         });
 
+
+    }
+
+
+
+    @Before
+    public void setUp() {
+        this.println("setup");
+        container.logger().info("@Before setUp");
+//        EventBus eb = vertx.eventBus();
+
+    }
+
+    @After
+    public void tearDown() throws IOException {
+        this.println("teardown");
+        container.logger().info("@After tearDown");
+
+    }
+
+    private void println(String string) {
+        System.out.println(string);
+    }
+
+
+
+    @Test
+    public void _setup() {
+        System.out.println("Flush buckets for pre-test");
+        JsonObject request = new JsonObject()
+                .putString("management", "FLUSHBUCKET")
+                .putString("name", "async")
+                .putBoolean("ack", true);
+        push(request, true);
+
+        request = new JsonObject()
+                .putString("management", "FLUSHBUCKET")
+                .putString("name", "sync")
+                .putBoolean("ack", true);
+        push(request, true);
+
+//        System.out.println("Deleting buckets for pre-test");
+//        request = new JsonObject()
+//                .putString("management", "DELETEBUCKET")
+//                .putString("name", "async")
+//                .putBoolean("ack", true);
+//        push(request, true);
+//
+//        request = new JsonObject()
+//                .putString("management", "DELETEBUCKET")
+//                .putString("name", "sync")
+//                .putBoolean("ack", true);
+//        push(request, true);
+
+        System.out.println("Creating buckets for pre-test");
+        request = new JsonObject()
+                .putString("management", "CREATEBUCKET")
+                .putString("name", "async")
+                .putString("bucketType", "couchbase")
+                .putNumber("memorySizeMB", 128)
+                .putNumber("replicas", 0)
+                .putString("authPassword", async_config.getString("couchbase.bucket.password"))
+                .putBoolean("flushEnabled", true)
+                .putBoolean("ack", true);
+        push(request, true);
+
+        request = new JsonObject()
+                .putString("management", "CREATEBUCKET")
+                .putString("name", "sync")
+                .putString("bucketType", "couchbase")
+                .putNumber("memorySizeMB", 128)
+                .putNumber("replicas", 0)
+                .putString("authPassword", sync_config.getString("couchbase.bucket.password"))
+                .putBoolean("flushEnabled", true)
+                .putBoolean("ack", true);
+
+        push(request, true);
 
     }
 
@@ -160,33 +226,34 @@ public class SyncAsync extends TestVerticle{
     }
 
 
-    @Test
-    public void aAdd_prepare() {
-        HashMap<String, Object> cbop = new HashMap<String, Object>();
-
-        cbop.put("op", "delete");
-        cbop.put("ack", true);
-        cbop.put("key", "op_add1");
-        cbop.put("value", encode(11));
-        act(cbop);
-
+//    @Test
+//    public void aAdd_prepare() {
+//        HashMap<String, Object> cbop = new HashMap<String, Object>();
+//
+//        cbop.put("op", "delete");
+//        cbop.put("ack", true);
+//        cbop.put("key", "op_add1");
+//        cbop.put("value", encode(11));
+//        act(cbop);
+//
 //        cbop = new HashMap<String, Object>();
 //
 //        cbop.put("op", "set");
 //        cbop.put("ack", true);
-//        cbop.put("key", "op_add");
+//        cbop.put("key", "op_add1");
 //        cbop.put("value", encode(11));
 //        act(cbop);
-    }
+//    }
 
     @Test
-    public void testAdd() {
+    public void ztestAdd() {
+
         HashMap<String, Object> cbop = new HashMap<String, Object>();
 
         cbop.put("op", "add");
         cbop.put("ack", true);
-        cbop.put("key", "op_add1");
-        cbop.put("value", 11);
+        cbop.put("key", "op_add_it");
+        cbop.put("value", encode(200));
         act(cbop);
     }
 
@@ -365,6 +432,7 @@ public class SyncAsync extends TestVerticle{
                     post(message);
                 }
             };
+            System.out.println("sending to:" + async_config.getString("address"));
             vertx.eventBus().send(async_config.getString("address"), notif, async_replyHandler);
 
         } else {
@@ -375,6 +443,7 @@ public class SyncAsync extends TestVerticle{
                     post(message);
                 }
             };
+            System.out.println("sending to:" + sync_config.getString("address"));
             vertx.eventBus().send(sync_config.getString("address"), notif, sync_replyHandler);
 
         }

@@ -13,6 +13,8 @@ import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.testtools.TestVerticle;
 
+import com.scalabl3.vertxmods.couchbase.test.Util;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -45,13 +47,14 @@ public class CouchbaseAsyncTests extends TestVerticle{
 
         EventBus eb = vertx.eventBus();
         config = new JsonObject();
+        config = Util.loadConfig(this, "/conf-async.json");
 
-        config.putString("address", "vertx.couchbase.async");
-        config.putString("couchbase.nodelist", "localhost:8091");
-        config.putString("couchbase.bucket", "default");
-        config.putString("couchbase.bucket.password", "");
-        config.putNumber("couchbase.num.clients", 1);
-        config.putBoolean("async_mode", true);
+//        config.putString("address", "vertx.couchbase.async");
+//        config.putString("couchbase.nodelist", "localhost:8091");
+//        config.putString("couchbase.bucket", "default");
+//        config.putString("couchbase.bucket.password", "");
+//        config.putNumber("couchbase.num.clients", 1);
+//        config.putBoolean("async_mode", true);
 
         System.out.println("\n\n\nDeploy Worker Verticle Couchbase Async\n\n");
 

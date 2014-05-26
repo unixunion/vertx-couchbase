@@ -1,4 +1,5 @@
 package com.scalabl3.vertxmods.couchbase.async;
+
 import com.couchbase.client.CouchbaseClient;
 import com.couchbase.client.internal.HttpFuture;
 import com.couchbase.client.protocol.views.DesignDocument;
@@ -29,7 +30,6 @@ import java.util.concurrent.TimeoutException;
 
 @SuppressWarnings("unchecked")
 public enum CouchbaseCommandPacketAsync {
-
 
     /*
     Delete Design Doc
@@ -322,6 +322,10 @@ public enum CouchbaseCommandPacketAsync {
             Integer exp = message.body().getInteger("expiry") == null ? 0 : message.body().getInteger("expiry");
             PersistTo persistTo = (message.body().getInteger("persistTo") == null ? PersistTo.ZERO : PersistTo.values()[message.body().getInteger("persistTo")]);
             ReplicateTo replicateTo = (message.body().getInteger("replicateTo") == null ? ReplicateTo.ZERO : ReplicateTo.values()[message.body().getInteger("replicateTo")]);
+
+            if (!persistTo.equals(PersistTo.ZERO) || !replicateTo.equals(ReplicateTo.ZERO)) {
+                System.out.println("You cannot set replicateTo or persistTo in Async mode, because it blocks, please use a sync worker");
+            }
 
             Object value = message.body().getField("value");
             OperationFuture<Boolean> operationFuture = cb.add(key, exp, value);
@@ -767,6 +771,6 @@ public enum CouchbaseCommandPacketAsync {
 
     //no default implementation
     public abstract Future operation(CouchbaseClient cb, Message<JsonObject> message) throws Exception;
-
+//    public abstract Future operation(ClusterManager cm, Message<JsonObject> message) throws Exception;
     public abstract JsonObject buildResponse(Message<JsonObject> message, Future future, boolean returnAcknowledgement) throws Exception;
 }

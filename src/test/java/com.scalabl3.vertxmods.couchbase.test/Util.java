@@ -4,6 +4,10 @@ import com.google.gson.Gson;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.lang.reflect.Type;
 import java.util.NoSuchElementException;
 
@@ -45,6 +49,28 @@ public class Util {
         } catch (Exception e) {
             throw  new NoSuchElementException("No success boolean in message");
         }
+    }
+
+    static public JsonObject loadConfig(Object o, String file) {
+
+        try (InputStream stream = o.getClass().getResourceAsStream(file)) {
+            StringBuilder sb = new StringBuilder();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(stream, "UTF-8"));
+
+            String line = reader.readLine();
+            while (line != null) {
+                sb.append(line).append('\n');
+                line = reader.readLine();
+                System.out.println(line);
+            }
+
+            return new JsonObject(sb.toString());
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            return new JsonObject();
+        }
+
     }
 
 }

@@ -25,13 +25,15 @@ public class ClusterManagerTests extends TestVerticle {
     JsonObject config;
     DefaultPrettyPrinter pp;
     ObjectMapper mapper;
+    String address;
 
     @Override
     public void start() {
         initialize();
 
         eb = vertx.eventBus();
-        config = loadConfig("/conf.json");
+        config = Util.loadConfig(this, "/conf-async.json");
+        address = config.getString("address"); // save for tests
 
         // prettyprinter
         pp = new DefaultPrettyPrinter();
@@ -65,54 +67,77 @@ public class ClusterManagerTests extends TestVerticle {
 
     }
 
+//    @Test
+//    public void getBuckets() {
+//        JsonObject request = new JsonObject();
+//        request.putString("name", "all");
+//
+//        String address = config.getString("address") + ".mgmt.bucket";
+//        container.logger().info("sending to address: " + address);
+//
+//        eb.send(address, request, new Handler<Message<Buffer>>() {
+//            @Override
+//            public void handle(Message<Buffer> event) {
+//                container.logger().info("test_response");
+//
+//                container.logger().info("response: " + event.body());
+//
+//                try {
+//                    System.out.println("Pretty: " + mapper.writerWithDefaultPrettyPrinter().writeValueAsString(event.body().toString()));
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                }
+//
+//                testComplete();
+//            };
+//        });
+//
+//    }
+
+
+
     @Test
-    public void getBuckets() {
-        JsonObject request = new JsonObject();
-        request.putString("name", "all");
+    public void createBuckets() {
+        JsonObject request = new JsonObject()
+                .putString("management", "CREATEBUCKET")
+                .putString("name", "test")
+                .putString("bucketType", "couchbase")
+                .putNumber("memorySizeMB", 128)
+                .putNumber("replicas", 0)
+                .putString("authPassword", "")
+                .putBoolean("flushEnabled", true)
+                .putBoolean("ack", true);
 
-        String address = config.getString("address") + ".mgmt.bucket";
-        container.logger().info("sending to address: " + address);
+        container.logger().info("sending message " + request.toString() + " to address: " + address);
 
-        eb.send(address, request, new Handler<Message<Buffer>>() {
+        eb.send(address, request, new Handler<Message<JsonObject>>() {
             @Override
-            public void handle(Message<Buffer> event) {
-                container.logger().info("test_response");
-
+            public void handle(Message<JsonObject> event) {
                 container.logger().info("response: " + event.body());
-
-                try {
-                    System.out.println("Pretty: " + mapper.writerWithDefaultPrettyPrinter().writeValueAsString(event.body().toString()));
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-
                 testComplete();
             };
         });
-
     }
 
 
-    JsonObject loadConfig(String file) {
-//        System.out.println(System.getProperty("java.class.path"));
-        try (InputStream stream = this.getClass().getResourceAsStream(file)) {
-            StringBuilder sb = new StringBuilder();
-            BufferedReader reader = new BufferedReader(new InputStreamReader(stream, "UTF-8"));
+    @Test
+    public void deleteBuckets() {
+        JsonObject request = new JsonObject()
+                .putString("management", "DELETEBUCKET")
+                .putString("name", "test")
+                .putBoolean("ack", true);
 
-            String line = reader.readLine();
-            while (line != null) {
-                sb.append(line).append('\n');
-                line = reader.readLine();
-                System.out.println(line);
-            }
+        container.logger().info("sending message " + request.toString() + " to address: " + address);
 
-            return new JsonObject(sb.toString());
-
-        } catch (IOException e) {
-            e.printStackTrace();
-            return new JsonObject();
-        }
-
+        eb.send(address, request, new Handler<Message<JsonObject>>() {
+            @Override
+            public void handle(Message<JsonObject> event) {
+                container.logger().info("response: " + event.body());
+                testComplete();
+            };
+        });
     }
+
+
 
 }

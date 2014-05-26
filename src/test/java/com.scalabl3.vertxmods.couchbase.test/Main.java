@@ -1,6 +1,5 @@
 package com.scalabl3.vertxmods.couchbase.test;
 
-import com.google.gson.Gson;
 import org.junit.Test;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
@@ -10,13 +9,10 @@ import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.testtools.TestVerticle;
-import static org.vertx.testtools.VertxAssert.*;
-import com.scalabl3.vertxmods.couchbase.test.User;
-import com.scalabl3.vertxmods.couchbase.test.Util;
-
 
 import java.util.HashMap;
-import java.util.UUID;
+
+import static org.vertx.testtools.VertxAssert.*;
 
 /**
  * Created with IntelliJ IDEA.
@@ -59,7 +55,7 @@ public class Main extends TestVerticle {
 
         config.putString("address", "vertx.couchbase.sync");
         config.putString("couchbase.nodelist", "localhost:8091");
-        config.putString("couchbase.bucket", "ivault");
+        config.putString("couchbase.bucket", "default");
         config.putString("couchbase.bucket.password", "");
         config.putNumber("couchbase.num.clients", 1);
         config.putBoolean("async_mode", false);

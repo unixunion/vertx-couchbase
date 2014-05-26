@@ -126,6 +126,87 @@ push method for sending the request
     }
 
 ```
+
+## Commands
+
+### CREATEBUCKET
+
+Creates a bucket 
+
+#### request
+```json
+{
+  "management": "CREATEBUCKET",
+  "name": "test",
+  "bucketType": "couchbase", // couchbase or memcached
+  "memorySizeMB": 128,
+  "replicas": 0, // number of nodes to replicate to 
+  "authPassword": "", // desired password for the bucket
+  "flushEnabled": true, // allow flushing
+  "ack": false
+}
+```
+
+#### response
+
+```json
+{
+  "response": {
+    "success": true
+  }
+}
+```
+
+### DELETEBUCKET
+
+Deletes a bucket
+
+#### request
+
+```json
+{
+  "management": "DELETEBUCKET",
+  "name": "test",
+  "ack": true
+}
+```
+
+#### response
+
+```json
+{
+  "response": {
+    "success": true
+  }
+}
+
+```
+
+### FLUSHBUCKET
+
+Deletes all documents in a bucket
+
+#### request
+
+```json
+{
+  "management": "FLUSHBUCKET",
+  "name": "test",
+  "ack": true
+}
+```
+
+#### response
+
+```json
+{
+  "response": {
+    "success": true
+  }
+}
+
+```
+
 ### CREATEDESIGNDOC
 
 Create a design doc and views

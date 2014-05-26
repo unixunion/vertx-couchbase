@@ -1,9 +1,10 @@
 package com.scalabl3.vertxmods.couchbase.sync;
 
 import com.couchbase.client.CouchbaseClient;
-//import com.couchbase.client.internal.HttpFuture;
-import com.couchbase.client.internal.HttpFuture;
-import com.couchbase.client.protocol.views.*;
+import com.couchbase.client.protocol.views.DesignDocument;
+import com.couchbase.client.protocol.views.Query;
+import com.couchbase.client.protocol.views.View;
+import com.couchbase.client.protocol.views.ViewResponse;
 import net.spy.memcached.CASResponse;
 import net.spy.memcached.CASValue;
 import net.spy.memcached.PersistTo;
@@ -21,58 +22,60 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeoutException;
 
+//import com.couchbase.client.internal.HttpFuture;
+
 @SuppressWarnings("unchecked")
 public enum CouchbaseCommandPacketSync {
 
-    /*
-    Delete Design Doc
-    */
-    DELETEDESIGNDOC() {
-        @Override
-        public JsonObject operation(CouchbaseClient cb, Message<JsonObject> message) throws Exception {
-            String name = message.body().getString("name");
-            JsonObject result = new JsonObject();
-            result.putBoolean("success", cb.deleteDesignDoc(name));
-            return result;
-        }
-
-        @Override
-        public JsonObject buildResponse(Message<JsonObject> message, JsonObject result, boolean returnAcknowledgement) throws Exception {
-
-            if(!returnAcknowledgement) {
-                return null;
-            }
-
-            JsonObject response = createGenericResponse(message);
-            response.putBoolean("success", result.getBoolean("success"));
-            return response;
-        }
-    },
-
-    /*
-    Create Design Doc
-    */
-    CREATEDESIGNDOC() {
-        @Override
-        public JsonObject operation(CouchbaseClient cb, Message<JsonObject> message) throws Exception {
-            String name = message.body().getString("name");
-            String value = message.body().getString("value");
-            HttpFuture<Boolean> f = cb.asyncCreateDesignDoc(name, value);
-            return new JsonObject().putBoolean("value", f.get());
-        }
-
-        @Override
-        public JsonObject buildResponse(Message<JsonObject> message, JsonObject result, boolean returnAcknowledgement) throws Exception {
-
-            if(!returnAcknowledgement) {
-                return null;
-            }
-
-            JsonObject response = createGenericResponse(message);
-            response.putBoolean("success", result.getBoolean("value"));
-            return response;
-        }
-    },
+//    /*
+//    Delete Design Doc
+//    */
+//    DELETEDESIGNDOC() {
+//        @Override
+//        public JsonObject operation(CouchbaseClient cb, Message<JsonObject> message) throws Exception {
+//            String name = message.body().getString("name");
+//            JsonObject result = new JsonObject();
+//            result.putBoolean("success", cb.deleteDesignDoc(name));
+//            return result;
+//        }
+//
+//        @Override
+//        public JsonObject buildResponse(Message<JsonObject> message, JsonObject result, boolean returnAcknowledgement) throws Exception {
+//
+//            if(!returnAcknowledgement) {
+//                return null;
+//            }
+//
+//            JsonObject response = createGenericResponse(message);
+//            response.putBoolean("success", result.getBoolean("success"));
+//            return response;
+//        }
+//    },
+//
+//    /*
+//    Create Design Doc
+//    */
+//    CREATEDESIGNDOC() {
+//        @Override
+//        public JsonObject operation(CouchbaseClient cb, Message<JsonObject> message) throws Exception {
+//            String name = message.body().getString("name");
+//            String value = message.body().getString("value");
+//            HttpFuture<Boolean> f = cb.asyncCreateDesignDoc(name, value);
+//            return new JsonObject().putBoolean("value", f.get());
+//        }
+//
+//        @Override
+//        public JsonObject buildResponse(Message<JsonObject> message, JsonObject result, boolean returnAcknowledgement) throws Exception {
+//
+//            if(!returnAcknowledgement) {
+//                return null;
+//            }
+//
+//            JsonObject response = createGenericResponse(message);
+//            response.putBoolean("success", result.getBoolean("value"));
+//            return response;
+//        }
+//    },
 
     /*
     get design doc
@@ -333,7 +336,7 @@ public enum CouchbaseCommandPacketSync {
             String key = getKey(message);
             Object value = getValue(message);
             Integer exp = message.body().getInteger("expiry") == null ? 0 : message.body().getInteger("expiry");
-            PersistTo persistTo = (message.body().getInteger("persistTo") == null ? PersistTo.ZERO : PersistTo.values()[message.body().getInteger("persistTo")]);
+            PersistTo persistTo = (message.body().getInteger("persistTo") == null ? PersistTo.ONE : PersistTo.values()[message.body().getInteger("persistTo")]);
             ReplicateTo replicateTo = (message.body().getInteger("replicateTo") == null ? ReplicateTo.ZERO : ReplicateTo.values()[message.body().getInteger("replicateTo")]);
 
             OperationFuture<Boolean> op = cb.add(key, exp, value, persistTo, replicateTo);
