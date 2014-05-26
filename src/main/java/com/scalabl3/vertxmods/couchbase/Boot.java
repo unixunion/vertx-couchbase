@@ -47,16 +47,6 @@ public class Boot extends Verticle {
             }
         });
 
-        container.deployVerticle("com.scalabl3.vertxmods.couchbase.ClusterManager", config ,new AsyncResultHandler<String>() {
-            public void handle(AsyncResult<String> deployResult) {
-                if (deployResult.succeeded()) {
-                    startedResult.setResult(null);
-                } else {
-                    startedResult.setFailure(deployResult.cause());
-                }
-            }
-        });
-
 
     }
 

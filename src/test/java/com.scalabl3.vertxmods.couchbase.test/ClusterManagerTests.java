@@ -67,35 +67,6 @@ public class ClusterManagerTests extends TestVerticle {
 
     }
 
-//    @Test
-//    public void getBuckets() {
-//        JsonObject request = new JsonObject();
-//        request.putString("name", "all");
-//
-//        String address = config.getString("address") + ".mgmt.bucket";
-//        container.logger().info("sending to address: " + address);
-//
-//        eb.send(address, request, new Handler<Message<Buffer>>() {
-//            @Override
-//            public void handle(Message<Buffer> event) {
-//                container.logger().info("test_response");
-//
-//                container.logger().info("response: " + event.body());
-//
-//                try {
-//                    System.out.println("Pretty: " + mapper.writerWithDefaultPrettyPrinter().writeValueAsString(event.body().toString()));
-//                } catch (IOException e) {
-//                    e.printStackTrace();
-//                }
-//
-//                testComplete();
-//            };
-//        });
-//
-//    }
-
-
-
     @Test
     public void createBuckets() {
         JsonObject request = new JsonObject()
@@ -114,14 +85,14 @@ public class ClusterManagerTests extends TestVerticle {
             @Override
             public void handle(Message<JsonObject> event) {
                 container.logger().info("response: " + event.body());
+                assertTrue(getSuccess(event));                assertTrue(getSuccess(event));
                 testComplete();
             };
         });
     }
 
-
     @Test
-    public void deleteBuckets() {
+    public void z_deleteBuckets() {
         JsonObject request = new JsonObject()
                 .putString("management", "DELETEBUCKET")
                 .putString("name", "test")
@@ -133,10 +104,56 @@ public class ClusterManagerTests extends TestVerticle {
             @Override
             public void handle(Message<JsonObject> event) {
                 container.logger().info("response: " + event.body());
+                assertTrue(getSuccess(event));
                 testComplete();
             };
         });
     }
+
+
+    @Test
+    public void createPortBuckets() {
+        JsonObject request = new JsonObject()
+                .putString("management", "CREATEPORTBUCKET")
+                .putString("name", "test_port")
+                .putString("bucketType", "couchbase")
+                .putNumber("memorySizeMB", 128)
+                .putNumber("replicas", 0)
+                .putNumber("port", 30000)
+                .putBoolean("flushEnabled", true)
+                .putBoolean("ack", true);
+
+        container.logger().info("sending message " + request.toString() + " to address: " + address);
+
+        eb.send(address, request, new Handler<Message<JsonObject>>() {
+            @Override
+            public void handle(Message<JsonObject> event) {
+                container.logger().info("response: " + event.body());
+                assertTrue(getSuccess(event));
+                testComplete();
+            };
+        });
+    }
+
+    @Test
+    public void z_deletePortBucket() {
+        JsonObject request = new JsonObject()
+                .putString("management", "DELETEBUCKET")
+                .putString("name", "test_port")
+                .putBoolean("ack", true);
+
+        container.logger().info("sending message " + request.toString() + " to address: " + address);
+
+        eb.send(address, request, new Handler<Message<JsonObject>>() {
+            @Override
+            public void handle(Message<JsonObject> event) {
+                container.logger().info("response: " + event.body());
+                assertTrue(getSuccess(event));
+                testComplete();
+            };
+        });
+    }
+
 
     @Test
     public void listBuckets() {
@@ -150,9 +167,15 @@ public class ClusterManagerTests extends TestVerticle {
             @Override
             public void handle(Message<JsonObject> event) {
                 container.logger().info("response: " + event.body());
+                assertTrue(getSuccess(event));
                 testComplete();
             };
         });
+    }
+
+    // get the response success boolean out of the event
+    public Boolean getSuccess(Message<JsonObject> event) {
+        return event.body().getObject("response").getBoolean("success");
     }
 
 

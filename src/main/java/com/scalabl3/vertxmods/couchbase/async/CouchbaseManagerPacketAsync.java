@@ -59,6 +59,53 @@ public enum CouchbaseManagerPacketAsync {
         }
     },
 
+    /*
+     Create Port Bucket
+
+     Request
+
+     Response
+
+      */
+    CREATEPORTBUCKET() {
+
+        @Override
+        public Future operation(ClusterManager cm, Message<JsonObject> message) throws Exception {
+            String name = message.body().getString("name");
+
+            BucketType bucketType = Enum.valueOf(BucketType.class, message.body().getString("bucketType").toUpperCase());
+            Integer memorySizeMB = message.body().getInteger("memorySizeMB");
+            Integer replicas = message.body().getInteger("replicas");
+            Integer port = message.body().getInteger("port");
+            Boolean flushEnabled = message.body().getBoolean("flushEnabled");
+
+            Future<Boolean> f = new CompletedFuture(true);
+
+            try {
+                cm.createPortBucket(bucketType, name, memorySizeMB, replicas, port, flushEnabled);
+            } catch (Exception e) {
+                e.printStackTrace();
+                f = new CompletedFuture(false);
+            }
+
+            return f;
+        }
+
+        @Override
+        public JsonObject buildResponse(Message<JsonObject> message, Future result, boolean returnAcknowledgement) throws Exception {
+
+            if(!returnAcknowledgement) {
+                return null;
+            }
+
+            JsonObject response = new JsonObject();
+            response.putBoolean("success", (Boolean)result.get());
+
+            return response;
+        }
+    },
+
+
     DELETEBUCKET() {
 
         @Override
@@ -123,21 +170,40 @@ public enum CouchbaseManagerPacketAsync {
         }
     },
 
+    /*
+    LISTBUCKETS
+
+    returns a list of buckets from the couchcluster
+
+    Request
+    {
+        "management":"LISTBUCKETS",
+        "ack":true
+    }
+
+    Response
+    {
+      "response": {
+        "data": [
+          "async",
+          "default",
+          "sync"
+        ],
+        "success": true
+      }
+    }
+     */
     LISTBUCKETS() {
 
         @Override
         public Future operation(ClusterManager cm, Message<JsonObject> message) throws Exception {
-//            String name = message.body().getString("name");
-
 
             JsonObject response = new JsonObject();
 
             try {
-//                response.p
                 ArrayList l = (ArrayList)cm.listBuckets();
                 response.putArray("data", new JsonArray(l));
                 response.putBoolean("success", true);
-//                f = new CompletedFuture(response);
             } catch (Exception e) {
                 e.printStackTrace();
                 response.putBoolean("success", false);
@@ -161,10 +227,6 @@ public enum CouchbaseManagerPacketAsync {
 
 
     ;
-
-//    public abstract JsonObject operation(ClusterManager cb, Message<JsonObject> message, Boolean async) throws Exception;
-//
-//    public abstract JsonObject buildResponse(Message<JsonObject> message, Future future, boolean returnAcknowledgement) throws Exception;
 
     public abstract Future operation(ClusterManager cb, Message<JsonObject> message) throws Exception;
 
