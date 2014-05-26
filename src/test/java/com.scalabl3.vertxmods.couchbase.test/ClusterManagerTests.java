@@ -8,16 +8,10 @@ import org.junit.runners.MethodSorters;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.testtools.TestVerticle;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 
 import static org.vertx.testtools.VertxAssert.*;
 
@@ -88,7 +82,7 @@ public class ClusterManagerTests extends TestVerticle {
             @Override
             public void handle(Message<JsonObject> event) {
                 container.logger().info("response: " + event.body());
-                assertTrue(getSuccess(event));                assertTrue(getSuccess(event));
+                assertTrue(Util.getSuccess(event));                assertTrue(Util.getSuccess(event));
                 testComplete();
             };
         });
@@ -107,7 +101,7 @@ public class ClusterManagerTests extends TestVerticle {
             @Override
             public void handle(Message<JsonObject> event) {
                 container.logger().info("response: " + event.body());
-                assertTrue(getSuccess(event));
+                assertTrue(Util.getSuccess(event));
                 testComplete();
             };
         });
@@ -132,7 +126,7 @@ public class ClusterManagerTests extends TestVerticle {
             @Override
             public void handle(Message<JsonObject> event) {
                 container.logger().info("response: " + event.body());
-                assertTrue(getSuccess(event));
+                assertTrue(Util.getSuccess(event));
                 testComplete();
             };
         });
@@ -151,7 +145,7 @@ public class ClusterManagerTests extends TestVerticle {
             @Override
             public void handle(Message<JsonObject> event) {
                 container.logger().info("response: " + event.body());
-                assertTrue(getSuccess(event));
+                assertTrue(Util.getSuccess(event));
                 testComplete();
             };
         });
@@ -170,7 +164,7 @@ public class ClusterManagerTests extends TestVerticle {
             @Override
             public void handle(Message<JsonObject> event) {
                 container.logger().info("response: " + event.body());
-                assertTrue(getSuccess(event));
+                assertTrue(Util.getSuccess(event));
                 testComplete();
             };
         });
@@ -189,16 +183,10 @@ public class ClusterManagerTests extends TestVerticle {
             @Override
             public void handle(Message<JsonObject> event) {
                 container.logger().info("response: " + event.body());
-                assertTrue(getSuccess(event));
+                assertTrue(Util.getSuccess(event));
                 testComplete();
             };
         });
-    }
-
-
-    // get the response success boolean out of the event
-    public Boolean getSuccess(Message<JsonObject> event) {
-        return event.body().getObject("response").getBoolean("success");
     }
 
 

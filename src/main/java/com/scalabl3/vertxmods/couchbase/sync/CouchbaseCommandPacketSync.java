@@ -1,6 +1,7 @@
 package com.scalabl3.vertxmods.couchbase.sync;
 
 import com.couchbase.client.CouchbaseClient;
+import com.couchbase.client.internal.HttpFuture;
 import com.couchbase.client.protocol.views.DesignDocument;
 import com.couchbase.client.protocol.views.Query;
 import com.couchbase.client.protocol.views.View;
@@ -27,55 +28,55 @@ import java.util.concurrent.TimeoutException;
 @SuppressWarnings("unchecked")
 public enum CouchbaseCommandPacketSync {
 
-//    /*
-//    Delete Design Doc
-//    */
-//    DELETEDESIGNDOC() {
-//        @Override
-//        public JsonObject operation(CouchbaseClient cb, Message<JsonObject> message) throws Exception {
-//            String name = message.body().getString("name");
-//            JsonObject result = new JsonObject();
-//            result.putBoolean("success", cb.deleteDesignDoc(name));
-//            return result;
-//        }
-//
-//        @Override
-//        public JsonObject buildResponse(Message<JsonObject> message, JsonObject result, boolean returnAcknowledgement) throws Exception {
-//
-//            if(!returnAcknowledgement) {
-//                return null;
-//            }
-//
-//            JsonObject response = createGenericResponse(message);
-//            response.putBoolean("success", result.getBoolean("success"));
-//            return response;
-//        }
-//    },
-//
-//    /*
-//    Create Design Doc
-//    */
-//    CREATEDESIGNDOC() {
-//        @Override
-//        public JsonObject operation(CouchbaseClient cb, Message<JsonObject> message) throws Exception {
-//            String name = message.body().getString("name");
-//            String value = message.body().getString("value");
-//            HttpFuture<Boolean> f = cb.asyncCreateDesignDoc(name, value);
-//            return new JsonObject().putBoolean("value", f.get());
-//        }
-//
-//        @Override
-//        public JsonObject buildResponse(Message<JsonObject> message, JsonObject result, boolean returnAcknowledgement) throws Exception {
-//
-//            if(!returnAcknowledgement) {
-//                return null;
-//            }
-//
-//            JsonObject response = createGenericResponse(message);
-//            response.putBoolean("success", result.getBoolean("value"));
-//            return response;
-//        }
-//    },
+    /*
+    Delete Design Doc
+    */
+    DELETEDESIGNDOC() {
+        @Override
+        public JsonObject operation(CouchbaseClient cb, Message<JsonObject> message) throws Exception {
+            String name = message.body().getString("name");
+            JsonObject result = new JsonObject();
+            result.putBoolean("success", cb.deleteDesignDoc(name));
+            return result;
+        }
+
+        @Override
+        public JsonObject buildResponse(Message<JsonObject> message, JsonObject result, boolean returnAcknowledgement) throws Exception {
+
+            if(!returnAcknowledgement) {
+                return null;
+            }
+
+            JsonObject response = createGenericResponse(message);
+            response.putBoolean("success", result.getBoolean("success"));
+            return response;
+        }
+    },
+
+    /*
+    Create Design Doc
+    */
+    CREATEDESIGNDOC() {
+        @Override
+        public JsonObject operation(CouchbaseClient cb, Message<JsonObject> message) throws Exception {
+            String name = message.body().getString("name");
+            String value = message.body().getString("value");
+            HttpFuture<Boolean> f = cb.asyncCreateDesignDoc(name, value);
+            return new JsonObject().putBoolean("value", f.get());
+        }
+
+        @Override
+        public JsonObject buildResponse(Message<JsonObject> message, JsonObject result, boolean returnAcknowledgement) throws Exception {
+
+            if(!returnAcknowledgement) {
+                return null;
+            }
+
+            JsonObject response = createGenericResponse(message);
+            response.putBoolean("success", result.getBoolean("value"));
+            return response;
+        }
+    },
 
     /*
     get design doc

@@ -69,7 +69,6 @@ public class CouchbaseSyncTests extends TestVerticle{
         System.out.println(string);
     }
 
-
     @Test
     public void create_design_document() {
 
@@ -92,7 +91,8 @@ public class CouchbaseSyncTests extends TestVerticle{
 
             @Override
             public void handle(final Message<JsonObject> reply) {
-                assertEquals(true, Util.getResponse(reply).getBoolean("success"));
+                System.out.println("response: " + reply.body());
+                assertTrue(Util.getSuccess(reply));
                 System.out.println("Got Response : " + reply.body());
                 testComplete();
             }
@@ -113,30 +113,12 @@ public class CouchbaseSyncTests extends TestVerticle{
             @Override
             public void handle(final Message<JsonObject> reply) {
                 System.out.println("Got Response : " + reply.body());
-                assertEquals(true, Util.getResponse(reply).getBoolean("success"));
+                assertTrue(Util.getSuccess(reply));
+//                assertEquals(true, Util.getResponse(reply).getBoolean("success"));
                 testComplete();
             }
         });
     }
-
-//    @Test
-//    public void get_xdelete_document_error() {
-//        JsonObject request = new JsonObject().putString("op", "DELETEDESIGNDOC")
-//                .putString("name", "dedsadasdsav_test")
-//                .putBoolean("ack", true);
-//
-//        System.out.println(request.toString());
-//
-//        vertx.eventBus().send(config.getString("address"), request, new Handler<Message<JsonObject>>() {
-//
-//            @Override
-//            public void handle(final Message<JsonObject> reply) {
-//                System.out.println("Got Response : " + reply.body());
-//                assertEquals(false, Util.getResponse(reply).getBoolean("success"));
-//                testComplete();
-//            }
-//        });
-//    }
 
     @Test
     public void create_design_document_error() {
@@ -152,7 +134,7 @@ public class CouchbaseSyncTests extends TestVerticle{
 
             @Override
             public void handle(final Message<JsonObject> reply) {
-                assertEquals(false, Util.getResponse(reply).getBoolean("success"));
+                assertFalse(Util.getSuccess(reply));
                 System.out.println("Got Response : " + reply.body());
                 testComplete();
             }
@@ -174,6 +156,7 @@ public class CouchbaseSyncTests extends TestVerticle{
             public void handle(final Message<JsonObject> reply) {
                 System.out.println("Got Document : " + reply.body());
                 assertEquals(true, Util.getResponse(reply).getBoolean("exists"));
+                assertTrue(Util.getSuccess(reply));
                 testComplete();
             }
         });
@@ -192,7 +175,7 @@ public class CouchbaseSyncTests extends TestVerticle{
 
             @Override
             public void handle(final Message<JsonObject> reply) {
-//                System.out.println("Got Document : " + reply.body());
+                System.out.println("Got Document : " + reply.body());
                 assertEquals("error", reply.body().getString("status"));
                 testComplete();
             }

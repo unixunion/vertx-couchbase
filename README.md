@@ -421,11 +421,18 @@ JsonObject request = new JsonObject().putString("op", "QUERY")
 vertx.eventBus().send(config.getString("address"), request, new Handler<Message<JsonObject>>()...
 ```
 
-### Performance Testing
+### Performance and Testing
 A couple of tests for sync. 
 
+#### General Tests
 ./gradlew test -Dtest.single=QueryTests
 ./gradlew test -Dtest.single=Main
+
+#### All Tests
+./gradlew test
+
+#### Performance Test
+./gradlew test -Dtest.single=TestPerformance
 
 ### SET
 

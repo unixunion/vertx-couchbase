@@ -1,4 +1,4 @@
-package com.scalabl3.vertxmods.couchbase.test;
+package com.deblox.couchperftest;
 
 import com.google.gson.Gson;
 import org.vertx.java.core.eventbus.Message;
