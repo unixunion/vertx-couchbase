@@ -47,7 +47,7 @@ public class RateCounter extends Verticle implements Handler<Message<Integer>> {
                     double rate = 1000 * (double)count / (now - last);
                     double avRate = 1000 * (double)totCount / (now - start);
                     count = 0;
-                    System.out.println((now - start) + " Rate: count/sec: " + rate + " Average rate: " + avRate);
+                    System.out.println("Rate: count/sec: " + rate + " Average rate: " + avRate);
                     last = now;
                 }
             }
