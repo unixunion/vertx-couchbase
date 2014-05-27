@@ -15,6 +15,13 @@ import org.vertx.testtools.TestVerticle;
 
 import static org.vertx.testtools.VertxAssert.*;
 
+/*
+
+ClusterManager tests
+
+this tests various bucket operations
+
+ */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ClusterManagerTests extends TestVerticle {
 
@@ -23,6 +30,7 @@ public class ClusterManagerTests extends TestVerticle {
     DefaultPrettyPrinter pp;
     ObjectMapper mapper;
     String address;
+    String bucket = "cm_test";
 
     @Override
     public void start() {
@@ -68,31 +76,12 @@ public class ClusterManagerTests extends TestVerticle {
     public void createBuckets() {
         JsonObject request = new JsonObject()
                 .putString("management", "CREATEBUCKET")
-                .putString("name", "test")
+                .putString("name", bucket)
                 .putString("bucketType", "couchbase")
                 .putNumber("memorySizeMB", 128)
                 .putNumber("replicas", 0)
                 .putString("authPassword", "")
                 .putBoolean("flushEnabled", true)
-                .putBoolean("ack", true);
-
-        container.logger().info("sending message " + request.toString() + " to address: " + address);
-
-        eb.send(address, request, new Handler<Message<JsonObject>>() {
-            @Override
-            public void handle(Message<JsonObject> event) {
-                container.logger().info("response: " + event.body());
-                assertTrue(Util.getSuccess(event));                assertTrue(Util.getSuccess(event));
-                testComplete();
-            };
-        });
-    }
-
-    @Test
-    public void z_deleteBuckets() {
-        JsonObject request = new JsonObject()
-                .putString("management", "DELETEBUCKET")
-                .putString("name", "test")
                 .putBoolean("ack", true);
 
         container.logger().info("sending message " + request.toString() + " to address: " + address);
@@ -107,12 +96,30 @@ public class ClusterManagerTests extends TestVerticle {
         });
     }
 
+    @Test
+    public void z_deleteBuckets() {
+        JsonObject request = new JsonObject()
+                .putString("management", "DELETEBUCKET")
+                .putString("name", bucket)
+                .putBoolean("ack", true);
+
+        container.logger().info("sending message " + request.toString() + " to address: " + address);
+
+        eb.send(address, request, new Handler<Message<JsonObject>>() {
+            @Override
+            public void handle(Message<JsonObject> event) {
+                container.logger().info("response: " + event.body());
+                assertTrue(Util.getSuccess(event));
+                testComplete();
+            };
+        });
+    }
 
     @Test
     public void createPortBuckets() {
         JsonObject request = new JsonObject()
                 .putString("management", "CREATEPORTBUCKET")
-                .putString("name", "test_port")
+                .putString("name", bucket+"_port")
                 .putString("bucketType", "couchbase")
                 .putNumber("memorySizeMB", 128)
                 .putNumber("replicas", 0)
@@ -136,7 +143,7 @@ public class ClusterManagerTests extends TestVerticle {
     public void z_deletePortBucket() {
         JsonObject request = new JsonObject()
                 .putString("management", "DELETEBUCKET")
-                .putString("name", "test_port")
+                .putString("name", bucket+"_port")
                 .putBoolean("ack", true);
 
         container.logger().info("sending message " + request.toString() + " to address: " + address);
@@ -150,7 +157,6 @@ public class ClusterManagerTests extends TestVerticle {
             };
         });
     }
-
 
     @Test
     public void listBuckets() {
@@ -174,7 +180,7 @@ public class ClusterManagerTests extends TestVerticle {
     public void flushBucket() {
         JsonObject request = new JsonObject()
                 .putString("management", "FLUSHBUCKET")
-                .putString("name", "test")
+                .putString("name", bucket)
                 .putBoolean("ack", true);
 
         container.logger().info("sending message " + request.toString() + " to address: " + address);

@@ -6,6 +6,7 @@ import com.couchbase.client.protocol.views.DesignDocument;
 import com.couchbase.client.protocol.views.Query;
 import com.couchbase.client.protocol.views.View;
 import com.couchbase.client.protocol.views.ViewResponse;
+import com.scalabl3.vertxmods.couchbase.Util;
 import net.spy.memcached.CASResponse;
 import net.spy.memcached.CASValue;
 import net.spy.memcached.PersistTo;
@@ -18,10 +19,6 @@ import org.vertx.java.core.json.JsonObject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeoutException;
 
 //import com.couchbase.client.internal.HttpFuture;
 
@@ -47,7 +44,7 @@ public enum CouchbaseCommandPacketSync {
                 return null;
             }
 
-            JsonObject response = createGenericResponse(message);
+            JsonObject response = Util.createGenericResponse(message);
             response.putBoolean("success", result.getBoolean("success"));
             return response;
         }
@@ -72,7 +69,7 @@ public enum CouchbaseCommandPacketSync {
                 return null;
             }
 
-            JsonObject response = createGenericResponse(message);
+            JsonObject response = Util.createGenericResponse(message);
             response.putBoolean("success", result.getBoolean("value"));
             return response;
         }
@@ -94,7 +91,7 @@ public enum CouchbaseCommandPacketSync {
         @Override
         public JsonObject buildResponse(Message<JsonObject> message, JsonObject result, boolean returnAcknowledgement) throws Exception {
 
-            JsonObject response = createGenericResponse(message);
+            JsonObject response = Util.createGenericResponse(message);
             JsonObject data = new JsonObject();
             // if we made it this far, it exists.
             response.putBoolean("exists", true);
@@ -157,11 +154,11 @@ public enum CouchbaseCommandPacketSync {
 //                System.out.println("Response from DB: " + response.toString());
 
 //                JsonObject data = new JsonObject();
-//                data = parseForJson(data, "value", response.toString());
-//                System.out.println("parseForJson: " + data.toString());
+//                data = Util.parseForJson(data, "value", response.toString());
+//                System.out.println("Util.parseForJson: " + data.toString());
 
-//                Object value = getValue(message);
-//                System.out.println("getValue: " + value.toString());
+//                Object value = Util.getValue(message);
+//                System.out.println("Util.getValue: " + value.toString());
 
 
 
@@ -188,7 +185,7 @@ public enum CouchbaseCommandPacketSync {
                     return null;
                 }
 
-                JsonObject response = createGenericResponse(message);
+                JsonObject response = Util.createGenericResponse(message);
 
                 if (result.getBoolean("success")) {
                     response.putBoolean("success", true);
@@ -205,7 +202,7 @@ public enum CouchbaseCommandPacketSync {
         @Override
         public JsonObject operation(CouchbaseClient cb, Message<JsonObject> message) throws Exception {
 
-            String key = getKey(message);
+            String key = Util.getKey(message);
             Number by = message.body().getNumber("by") == null? 1 : message.body().getNumber("by");
 
             JsonObject result = new JsonObject();
@@ -225,7 +222,7 @@ public enum CouchbaseCommandPacketSync {
                 return null;
             }
 
-            JsonObject response = createGenericResponse(message);
+            JsonObject response = Util.createGenericResponse(message);
             JsonObject data = new JsonObject();
 
             response.putObject("data", data);
@@ -237,7 +234,7 @@ public enum CouchbaseCommandPacketSync {
                 response.putBoolean("success", true);
             } else {
                 response.putBoolean("success", false);
-                response.putString("reason", "Key doesn't exist, or value is non-number '" + getKey(message) + "'");
+                response.putString("reason", "Key doesn't exist, or value is non-number '" + Util.getKey(message) + "'");
             }
             return response;
         }
@@ -246,7 +243,7 @@ public enum CouchbaseCommandPacketSync {
         @Override
         public JsonObject operation(CouchbaseClient cb, Message<JsonObject> message) throws Exception {
 
-            String key = getKey(message);
+            String key = Util.getKey(message);
             Number by = message.body().getNumber("by") == null? 1 : message.body().getNumber("by");
 
             JsonObject result = new JsonObject();
@@ -265,7 +262,7 @@ public enum CouchbaseCommandPacketSync {
                 return null;
             }
 
-            JsonObject response = createGenericResponse(message);
+            JsonObject response = Util.createGenericResponse(message);
             JsonObject data = new JsonObject();
 
             response.putObject("data", data);
@@ -276,7 +273,7 @@ public enum CouchbaseCommandPacketSync {
                 response.putBoolean("success", true);
             } else {
                 response.putBoolean("success", false);
-                response.putString("reason", "Key doesn't exist, or value is non-number '" + getKey(message) + "'");
+                response.putString("reason", "Key doesn't exist, or value is non-number '" + Util.getKey(message) + "'");
             }
 
             return response;
@@ -295,8 +292,8 @@ public enum CouchbaseCommandPacketSync {
         @Override
         public JsonObject operation(CouchbaseClient cb, Message<JsonObject> message) throws Exception {
 
-            String key = getKey(message);
-            Object value = getValue(message);
+            String key = Util.getKey(message);
+            Object value = Util.getValue(message);
             int expires = message.body().getInteger("expiry") == null ? 0 : message.body().getInteger("expiry");
             PersistTo persistTo = (message.body().getInteger("persistTo") == null ? PersistTo.ZERO : PersistTo.values()[message.body().getInteger("persistTo")]);
             ReplicateTo replicateTo = (message.body().getInteger("replicateTo") == null ? ReplicateTo.ZERO : ReplicateTo.values()[message.body().getInteger("replicateTo")]);
@@ -318,7 +315,7 @@ public enum CouchbaseCommandPacketSync {
                 return null;
             }
 
-            JsonObject response = createGenericResponse(message);
+            JsonObject response = Util.createGenericResponse(message);
 
             if (result.getBoolean("success")) {
                 response.putBoolean("success", true);
@@ -334,8 +331,8 @@ public enum CouchbaseCommandPacketSync {
         @Override
         public JsonObject operation(CouchbaseClient cb, Message<JsonObject> message) throws Exception {
 
-            String key = getKey(message);
-            Object value = getValue(message);
+            String key = Util.getKey(message);
+            Object value = Util.getValue(message);
             Integer exp = message.body().getInteger("expiry") == null ? 0 : message.body().getInteger("expiry");
             PersistTo persistTo = (message.body().getInteger("persistTo") == null ? PersistTo.ONE : PersistTo.values()[message.body().getInteger("persistTo")]);
             ReplicateTo replicateTo = (message.body().getInteger("replicateTo") == null ? ReplicateTo.ZERO : ReplicateTo.values()[message.body().getInteger("replicateTo")]);
@@ -354,13 +351,13 @@ public enum CouchbaseCommandPacketSync {
                 return null;
             }
 
-            JsonObject response = createGenericResponse(message);
+            JsonObject response = Util.createGenericResponse(message);
 
             if (result.getBoolean("success")) {
                 response.putBoolean("success", true);
             } else {
                 response.putBoolean("success", false);
-                result.putString("reason", "failed to fetch key '" + getKey(message) + "'");
+                result.putString("reason", "failed to fetch key '" + Util.getKey(message) + "'");
             }
 
             response.putObject("response", result);
@@ -371,8 +368,8 @@ public enum CouchbaseCommandPacketSync {
         @Override
         public JsonObject operation(CouchbaseClient cb, Message<JsonObject> message) throws Exception {
 
-            String key = getKey(message);
-            Object value = getValue(message);
+            String key = Util.getKey(message);
+            Object value = Util.getValue(message);
             Integer exp = message.body().getInteger("expiry") == null ? 0 : message.body().getInteger("expiry");
             Long cas = message.body().getLong("cas") == null ? null : message.body().getLong("cas");
             PersistTo persistTo = (message.body().getInteger("persistTo") == null ? null : PersistTo.values()[message.body().getInteger("persistTo")]);
@@ -392,7 +389,7 @@ public enum CouchbaseCommandPacketSync {
                 return null;
             }
 
-            JsonObject response = createGenericResponse(message);
+            JsonObject response = Util.createGenericResponse(message);
 
             if (result.getBoolean("success")) {
                 response.putBoolean("success", true);
@@ -408,8 +405,8 @@ public enum CouchbaseCommandPacketSync {
         @Override
         public JsonObject operation(CouchbaseClient cb, Message<JsonObject> message) throws Exception {
 
-            String key = getKey(message);
-            Object value = getValue(message);
+            String key = Util.getKey(message);
+            Object value = Util.getValue(message);
             Long cas = message.body().getLong("cas") == null ? null : message.body().getLong("cas");
 
             if (cas == null || cas <= 0) {
@@ -476,7 +473,7 @@ public enum CouchbaseCommandPacketSync {
                 return null;
             }
 
-            JsonObject response = createGenericResponse(message);
+            JsonObject response = Util.createGenericResponse(message);
 
             if (result.getBoolean("success")) {
                 response.putBoolean("success", true);
@@ -492,8 +489,8 @@ public enum CouchbaseCommandPacketSync {
         @Override
         public JsonObject operation(CouchbaseClient cb, Message<JsonObject> message) throws Exception {
 
-            String key = getKey(message);
-            Object value = getValue(message);
+            String key = Util.getKey(message);
+            Object value = Util.getValue(message);
             Long cas = message.body().getLong("cas");
 
             if (cas == null) {
@@ -513,7 +510,7 @@ public enum CouchbaseCommandPacketSync {
             if(!returnAcknowledgement) {
                 return null;
             }
-            JsonObject response = createGenericResponse(message);
+            JsonObject response = Util.createGenericResponse(message);
 
             if (result.getBoolean("success")) {
                 response.putBoolean("success", true);
@@ -529,8 +526,8 @@ public enum CouchbaseCommandPacketSync {
     PREPEND() {
         @Override
         public JsonObject operation(CouchbaseClient cb, Message<JsonObject> message) throws Exception {
-            String key = getKey(message);
-            Object value = getValue(message);
+            String key = Util.getKey(message);
+            Object value = Util.getValue(message);
             Long cas = message.body().getLong("cas");
 
             if (cas == null) {
@@ -551,7 +548,7 @@ public enum CouchbaseCommandPacketSync {
                 return null;
             }
 
-            JsonObject response = createGenericResponse(message);
+            JsonObject response = Util.createGenericResponse(message);
 
             if (result.getBoolean("success")) {
                 response.putBoolean("success", true);
@@ -567,7 +564,7 @@ public enum CouchbaseCommandPacketSync {
         @Override
         public JsonObject operation(CouchbaseClient cb, Message<JsonObject> message) throws Exception {
 
-            String key = getKey(message);
+            String key = Util.getKey(message);
             Integer exp = message.body().getInteger("expiry");
 
             if (exp == null) {
@@ -586,7 +583,7 @@ public enum CouchbaseCommandPacketSync {
             if(!returnAcknowledgement) {
                 return null;
             }
-            JsonObject response = createGenericResponse(message);
+            JsonObject response = Util.createGenericResponse(message);
 
             if (result.getBoolean("success")) {
                 response.putBoolean("success", true);
@@ -611,7 +608,7 @@ public enum CouchbaseCommandPacketSync {
     GET() {
         @Override
         public JsonObject operation(CouchbaseClient cb, Message<JsonObject> message) throws Exception {
-            String key = getKey(message);
+            String key = Util.getKey(message);
             Object o = cb.get(key);
 
 
@@ -619,7 +616,7 @@ public enum CouchbaseCommandPacketSync {
 
             if (o != null) {
                 JsonObject data = new JsonObject();
-                data = parseForJson(data, "value", o);
+                data = Util.parseForJson(data, "value", o);
 
                 result.putBoolean("success", true);
                 result.putBoolean("exists", true);
@@ -643,11 +640,11 @@ public enum CouchbaseCommandPacketSync {
             //     return null;
             // }
 
-            JsonObject response = createGenericResponse(message);
+            JsonObject response = Util.createGenericResponse(message);
             JsonObject data = new JsonObject();
 
             response.putString("key", message.body().getString("key"));
-//            data = parseForJson(data, "value", result);
+//            data = Util.parseForJson(data, "value", result);
 
             if (result == null)
                 response.putBoolean("exists", false);
@@ -685,7 +682,7 @@ public enum CouchbaseCommandPacketSync {
 
             for (String k : bulk.keySet()) {
                 Object value = bulk.get(k);
-                data = parseForJson(data, k, value);
+                data = Util.parseForJson(data, k, value);
             }
 
             result.putObject("values", data);
@@ -699,7 +696,7 @@ public enum CouchbaseCommandPacketSync {
             //     return null;
             // }
 
-            JsonObject response = createGenericResponse(message);
+            JsonObject response = Util.createGenericResponse(message);
             JsonObject data = new JsonObject();
 
             if (result.getBoolean("success")) {
@@ -716,7 +713,7 @@ public enum CouchbaseCommandPacketSync {
     GAT() {
         @Override
         public JsonObject operation(CouchbaseClient cb, Message<JsonObject> message) throws Exception {
-            String key = getKey(message);
+            String key = Util.getKey(message);
             Integer exp = message.body().getInteger("expiry");
             if (exp == null) {
                 throw new Exception("Missing mandatory non-empty field 'expiry'");
@@ -729,7 +726,7 @@ public enum CouchbaseCommandPacketSync {
 
             if (o != null) {
                 JsonObject data = new JsonObject();
-                data = parseForJson(data, "value", o);
+                data = Util.parseForJson(data, "value", o);
 
                 result.putBoolean("success", true);
                 result.putNumber("cas", op.getCas());
@@ -753,7 +750,7 @@ public enum CouchbaseCommandPacketSync {
             //     return null;
             // }
 
-            JsonObject response = createGenericResponse(message);
+            JsonObject response = Util.createGenericResponse(message);
 
             if (result.getBoolean("success")) {
                 response.putBoolean("success", true);
@@ -776,7 +773,7 @@ public enum CouchbaseCommandPacketSync {
     DELETE() {
         @Override
         public JsonObject operation(CouchbaseClient cb, Message<JsonObject> message) throws Exception {
-            String key = getKey(message);
+            String key = Util.getKey(message);
             OperationFuture<Boolean> op = cb.delete(key);
 
             JsonObject result = new JsonObject();
@@ -789,7 +786,7 @@ public enum CouchbaseCommandPacketSync {
             if(!returnAcknowledgement) {
                 return null;
             }
-            JsonObject response = createGenericResponse(message);
+            JsonObject response = Util.createGenericResponse(message);
 
             if (result.getBoolean("success")) {
                 response.putBoolean("success", true);
@@ -818,7 +815,7 @@ public enum CouchbaseCommandPacketSync {
             if(!returnAcknowledgement) {
                 return null;
             }
-            JsonObject response = createGenericResponse(message);
+            JsonObject response = Util.createGenericResponse(message);
 
             if (result.getBoolean("success")) {
                 response.putBoolean("success", true);
@@ -831,75 +828,6 @@ public enum CouchbaseCommandPacketSync {
             return response;
         }
     };
-
-
-    /*
-     *
-     *   STATIC Utility Methods
-     *
-     */
-
-    private static JsonObject createGenericResponse(Message<JsonObject> message) {
-        JsonObject response = new JsonObject();
-        response.putString("op", message.body().getString("op").toUpperCase());
-        response.putString("key", message.body().getString("key"));
-        response.putNumber("timestamp", System.currentTimeMillis());
-        return response;
-    }
-
-    public static String voidNull(String s) {
-        return s == null ? "" : s;
-    }
-    
-    private static void checkTimeout(Future f) throws TimeoutException {
-        if(f == null) {
-            throw new TimeoutException();
-        }
-    }
-    
-    private static String getKey(Message<JsonObject> message) throws Exception {
-        String key = voidNull(message.body().getString("key"));
-        if (key.isEmpty()) {
-            throw new Exception("Missing mandatory non-empty field 'key'");
-        }
-        return key;
-    }
-
-    private static Object getValue(Message<JsonObject> message) throws Exception {
-        Object value = message.body().getValue("value");
-//                getValue(message);
-        if (value == null) {
-            throw new Exception("Missing mandatory non-empty field 'value'");
-        }
-        return value;
-    }
-
-    
-
-    private static JsonObject parseForJson(JsonObject jsonObject, String key, Object value) throws Exception {
-        if (value != null) {
-            // not serializable in current version of vert.x
-            /*
-            * if(value instanceof JsonArray) jsonObject.putArray("value", (JsonArray) value); else if(value instanceof JsonObject) jsonObject.putObject("value", (JsonObject) value); else
-            */
-
-            if (value instanceof byte[]) {
-                jsonObject.putBinary(key, (byte[]) value);
-            } else if (value instanceof Boolean) {
-                jsonObject.putBoolean(key, (Boolean) value);
-            } else if (value instanceof Number) {
-                jsonObject.putNumber(key, (Number) value);
-            } else if (value instanceof String) {
-                jsonObject.putString(key, (String) value);
-            } else {
-                System.out.println(value);
-                throw new Exception("unsupported object type: " + value.getClass());
-            }
-        }
-        return jsonObject;
-    }
-
-    private static ExecutorService syncExecutor = Executors.newFixedThreadPool(2);
 
     //no default implementation
     public abstract JsonObject operation(CouchbaseClient cb, Message<JsonObject> message) throws Exception;

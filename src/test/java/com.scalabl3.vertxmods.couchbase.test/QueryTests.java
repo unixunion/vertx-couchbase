@@ -11,6 +11,7 @@ import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.testtools.TestVerticle;
+import com.scalabl3.vertxmods.couchbase.test.Util;
 
 import static org.vertx.testtools.VertxAssert.*;
 
@@ -35,17 +36,18 @@ public class QueryTests extends TestVerticle {
 
         EventBus eb = vertx.eventBus();
         config = new JsonObject();
+        config = Util.loadConfig(this, "/conf-async.json");
 
-        config.putString("address", "vertx.couchbase.sync");
-        config.putString("couchbase.nodelist", "localhost:8091");
-        config.putString("couchbase.bucket", "default");
-        config.putString("couchbase.bucket.password", "");
-        config.putNumber("couchbase.num.clients", 1);
-        config.putBoolean("async_mods", false);
+//        config.putString("address", "vertx.couchbase.sync");
+//        config.putString("couchbase.nodelist", "localhost:8091");
+//        config.putString("couchbase.bucket", "default");
+//        config.putString("couchbase.bucket.password", "");
+//        config.putNumber("couchbase.num.clients", 1);
+//        config.putBoolean("async_mods", false);
 
-        System.out.println("\n\n\nDeploy Worker Verticle Couchbase Sync\n\n");
+        System.out.println("\n\n\nDeploy Worker Verticle Couchbase\n\n");
 
-        container.deployWorkerVerticle("com.scalabl3.vertxmods.couchbase.Boot", config, 1, true, new AsyncResultHandler<String>() {
+        container.deployVerticle("com.scalabl3.vertxmods.couchbase.Boot", config, new AsyncResultHandler<String>() {
 
             @Override
             public void handle(AsyncResult<String> asyncResult) {
@@ -161,14 +163,18 @@ public class QueryTests extends TestVerticle {
             });
     }
 
-    @Test
+//    @Test
     public void get_keys() {
         JsonObject request = new JsonObject().putString("op", "QUERY")
                 .putString("design_doc", "users")
                 .putString("view_name", "users")
-                .putArray("keys", new JsonArray().add("user1").add("user2"))
+                .putArray("keys", new JsonArray()
+                        .add("user1")
+                        .add("user1")
+                )
                 .putBoolean("include_docs", true)
                 .putBoolean("ack", true);
+        System.out.println("Request: " + request.toString());
 
         vertx.eventBus().send(config.getString("address"), request, new Handler<Message<JsonObject>>() {
 

@@ -3,6 +3,7 @@ package com.scalabl3.vertxmods.couchbase.sync;
 import com.couchbase.client.ClusterManager;
 import com.couchbase.client.CouchbaseClient;
 import com.scalabl3.vertxmods.couchbase.ParseNodeList;
+import com.scalabl3.vertxmods.couchbase.Util;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
@@ -20,19 +21,17 @@ import java.util.concurrent.TimeoutException;
 
 
 /**
- * <p>Couchbase 2.x client for vert.x</p>
- * <p>In this module, all operations are using the synchronous variety of operations from Couchbase Java SDK.
- * This makes it better suited to be a Worker Verticle. Synchronous operations in Couchbase offer more parameter options
- * than the asynchronous varieties. However, under the hood, they use Netty/NIO so they are actually asynchronous as well.</p>
+ * Couchbase 2.x client for vert.x<p>
+ * Please see the manual for a full description<p>
  *
- * <p>See the Async Couchbase verticle for pure async varieties of operations, you can use both in conjunction as separate Verticles
- * using different addresses.</p>
+ * This is a fork of https://github.com/scalabl3/vertx-couchbase
  *
  * Based partially on spymemcached client for vert.x by <a href="mailto:atarno@gmail.com">Asher Tarnopolski</a>
- *
  * @author <a href="mailto:jasdeep@scalabl3.com">Jasdeep Jaitla</a>
+ * @author <a href="mailto:marzubus@gmail.com">Kegan Holtzhausen</a>
  *
  */
+
 public class CouchbaseEventBusSync extends Verticle {
     private String eventbusAddress;
     private String cbnodes;
@@ -83,7 +82,7 @@ public class CouchbaseEventBusSync extends Verticle {
     Handler<Message<JsonObject>> cbSyncHandler = new Handler<Message<JsonObject>>() {
         public void handle(Message<JsonObject> message) {
             logger.debug("Got message:" + message.body().toString());
-            String command = CouchbaseCommandPacketSync.voidNull(message.body().getString("op"));
+            String command = Util.voidNull(message.body().getString("op"));
 
             if (command.isEmpty()) {
                 sendError(message, "\"op\" property is mandatory for request, management NOT supported here yet, please " +

@@ -49,17 +49,9 @@ public class CouchbaseAsyncTests extends TestVerticle{
         config = new JsonObject();
         config = Util.loadConfig(this, "/conf-async.json");
 
-//        config.putString("address", "vertx.couchbase.async");
-//        config.putString("couchbase.nodelist", "localhost:8091");
-//        config.putString("couchbase.bucket", "default");
-//        config.putString("couchbase.bucket.password", "");
-//        config.putNumber("couchbase.num.clients", 1);
-//        config.putBoolean("async_mode", true);
+        System.out.println("\n\n\nDeploy mod-couchbase\n\n");
 
-        System.out.println("\n\n\nDeploy Worker Verticle Couchbase Async\n\n");
-
-
-        container.deployWorkerVerticle("com.scalabl3.vertxmods.couchbase.Boot", config, 1, true, new AsyncResultHandler<String>() {
+        container.deployVerticle("com.scalabl3.vertxmods.couchbase.Boot", config, new AsyncResultHandler<String>() {
 
             @Override
             public void handle(AsyncResult<String> asyncResult) {
@@ -99,15 +91,11 @@ public class CouchbaseAsyncTests extends TestVerticle{
 
 
     // Simple method to add a User object, id is appended to Username
-    public void add(String username) {
+    public void add(String username, String password) {
 
-        // Create a new user object via User class
-//        String hashed = BCrypt.hashpw("somepassword", BCrypt.gensalt(4));
-        String hashed = "somepassword";
-//        JsonObject reply = new JsonObject().putString("hashed", hashed);
+//        String hashed = "somepassword";
 
-
-        User user = new User(username, hashed);
+        User user = new User(username, password);
         String user_string = Util.encode(user);
 
         JsonObject request = new JsonObject().putString("op", "ADD")
@@ -131,7 +119,7 @@ public class CouchbaseAsyncTests extends TestVerticle{
         });
     }
 
-    public void query_key(String username) {
+    public void query_key(String username, final Handler<Message<JsonObject>> callback) {
 
         JsonObject request = new JsonObject().putString("op", "QUERY")
                 .putString("design_doc", "users")
@@ -142,13 +130,14 @@ public class CouchbaseAsyncTests extends TestVerticle{
 
         container.logger().debug("sending message to address: " + config.getString("address"));
 
+
         vertx.eventBus().send(config.getString("address"), request, new Handler<Message<JsonObject>>() {
 
             @Override
-            public void handle(final Message<JsonObject> reply) {
+            public void handle(Message<JsonObject> reply) {
                 try {
                     container.logger().debug("Response: " + reply.body());
-                    testComplete();
+                    callback.handle(reply);
                 } catch (Exception e) {
                     e.printStackTrace();
                     throw e;
@@ -159,8 +148,28 @@ public class CouchbaseAsyncTests extends TestVerticle{
 
     @Test
     public void query_single_key() {
-        add("user" + 100001);
-        query_key("user" + 100001);
+
+        // create the document
+        add("user" + 100001, "somepassword");
+
+        // install the view
+        create_design_document(new Handler<Message<JsonObject>>() {
+            @Override
+            public void handle(Message<JsonObject> reply) {
+                // query the view for the key
+                System.out.println("output received " + reply.body());
+                query_key("user" + 100001, new Handler<Message<JsonObject>>() {
+                    @Override
+                    public void handle(Message<JsonObject> reply) {
+                        System.out.println("output received " + reply.body());
+                        testComplete();
+                    }
+                });
+            }
+        });
+
+
+
     }
 
     @Test
@@ -169,24 +178,26 @@ public class CouchbaseAsyncTests extends TestVerticle{
         startTime = System.currentTimeMillis();
 
         for(int i=0; i < count_max; i++) {
-            add("user" + i);
+            add("user" + i, "somepassword");
             count();
         }
     }
 
-    @Test
-    public void create_design_document() {
+
+    public void create_design_document(final Handler<Message<JsonObject>> callback) {
 
         ViewDesign view1 = new ViewDesign(
-                "view1",
-                "function(a, b) {}"
+                "users",
+                "function (doc, meta) {\n" +
+                        "  emit(doc.username, doc.password);\n" +
+                        "}"
         );
 
-        DesignDocument dd = new DesignDocument("testtest");
+        DesignDocument dd = new DesignDocument("dev_users");
         dd.setView(view1);
 
         JsonObject request = new JsonObject().putString("op", "CREATEDESIGNDOC")
-                .putString("name", "dev_test")
+                .putString("name", "users")
                 .putString("value", dd.toJson())
                 .putBoolean("ack", true);
 
@@ -198,7 +209,8 @@ public class CouchbaseAsyncTests extends TestVerticle{
             public void handle(final Message<JsonObject> reply) {
                 System.out.println("Got Response : " + reply.body());
                 assertEquals(true, Util.getResponse(reply).getBoolean("success"));
-                testComplete();
+                callback.handle(reply);
+//                testComplete();
             }
         });
 
@@ -230,55 +242,51 @@ public class CouchbaseAsyncTests extends TestVerticle{
 
     @Test
     public void get_xdelete_document() {
-        JsonObject request = new JsonObject().putString("op", "DELETEDESIGNDOC")
-                .putString("name", "dev_test")
-                .putBoolean("ack", true);
 
-        vertx.eventBus().send(config.getString("address"), request, new Handler<Message<JsonObject>>() {
+        create_design_document(new Handler<Message<JsonObject>>() {
+                                   @Override
+                                   public void handle(Message<JsonObject> reply) {
+                                       JsonObject request = new JsonObject().putString("op", "DELETEDESIGNDOC")
+                                               .putString("name", "dev_test")
+                                               .putBoolean("ack", true);
 
-            @Override
-            public void handle(final Message<JsonObject> reply) {
-                assertEquals(true, Util.getResponse(reply).getBoolean("success"));
-                testComplete();
-            }
-        });
+                                       vertx.eventBus().send(config.getString("address"), request, new Handler<Message<JsonObject>>() {
+
+                                           @Override
+                                           public void handle(final Message<JsonObject> reply) {
+                                               assertEquals(true, Util.getResponse(reply).getBoolean("success"));
+                                               testComplete();
+                                                                           }
+                                       });
+                                   }
+       });
+
     }
-
-//    @Test
-//    public void get_xdelete_document_error() {
-//        JsonObject request = new JsonObject().putString("op", "DELETEDESIGNDOC")
-//                .putString("name", "dedsadasdsav_test")
-//                .putBoolean("ack", true);
-//
-//        System.out.println(request.toString());
-//
-//        vertx.eventBus().send(config.getString("address"), request, new Handler<Message<JsonObject>>() {
-//
-//            @Override
-//            public void handle(final Message<JsonObject> reply) {
-//                System.out.println("Got Response : " + reply.body());
-//                assertEquals(false, Util.getResponse(reply).getBoolean("success"));
-//                testComplete();
-//            }
-//        });
-//    }
 
 
     @Test
     public void get_design_document() {
-        JsonObject request = new JsonObject().putString("op", "GETDESIGNDOC")
-                .putString("name", "dev_test")
-                .putBoolean("ack", true);
 
-        vertx.eventBus().send(config.getString("address"), request, new Handler<Message<JsonObject>>() {
-
+        create_design_document(new Handler<Message<JsonObject>>() {
             @Override
-            public void handle(final Message<JsonObject> reply) {
-//                System.out.println("Got response: " + reply.body());
-                assertEquals(true, Util.getResponse(reply).getBoolean("exists"));
-                testComplete();
+            public void handle(Message<JsonObject> reply) {
+                JsonObject request = new JsonObject().putString("op", "GETDESIGNDOC")
+                        .putString("name", "users")
+                        .putBoolean("ack", true);
+
+                vertx.eventBus().send(config.getString("address"), request, new Handler<Message<JsonObject>>() {
+
+                    @Override
+                    public void handle(final Message<JsonObject> reply) {
+                        System.out.println("Got response: " + reply.body());
+                        assertEquals(true, Util.getResponse(reply).getBoolean("exists"));
+                        testComplete();
+                    }
+                });
             }
         });
+
+
     }
 
     @Test
@@ -301,7 +309,7 @@ public class CouchbaseAsyncTests extends TestVerticle{
     @Test
     public void get_keys() {
 
-        add("user" + 1001);
+        add("user" + 1001, "somepassword");
 
         JsonObject request = new JsonObject().putString("op", "GET")
                 .putString("key", "user1001")

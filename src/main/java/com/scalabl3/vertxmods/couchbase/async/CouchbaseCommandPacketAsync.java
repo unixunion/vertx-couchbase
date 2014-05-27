@@ -6,6 +6,7 @@ import com.couchbase.client.protocol.views.DesignDocument;
 import com.couchbase.client.protocol.views.Query;
 import com.couchbase.client.protocol.views.View;
 import com.couchbase.client.protocol.views.ViewResponse;
+import com.scalabl3.vertxmods.couchbase.Util;
 import net.spy.memcached.CASResponse;
 import net.spy.memcached.CASValue;
 import net.spy.memcached.PersistTo;
@@ -22,10 +23,7 @@ import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeoutException;
 
 
 @SuppressWarnings("unchecked")
@@ -50,8 +48,8 @@ public enum CouchbaseCommandPacketAsync {
                 return null;
             }
 
-            checkTimeout(future);
-            JsonObject response = createGenericResponse(message);
+            Util.checkTimeout(future);
+            JsonObject response = Util.createGenericResponse(message);
             response.putBoolean("success", (Boolean)future.get());
             return response;
         }
@@ -76,8 +74,8 @@ public enum CouchbaseCommandPacketAsync {
                 return null;
             }
 
-            checkTimeout(future);
-            JsonObject response = createGenericResponse(message);
+            Util.checkTimeout(future);
+            JsonObject response = Util.createGenericResponse(message);
             response.putBoolean("success", (Boolean)future.get());
             return response;
         }
@@ -102,8 +100,8 @@ public enum CouchbaseCommandPacketAsync {
                 return null;
             }
 
-            checkTimeout(future);
-            JsonObject response = createGenericResponse(message);
+            Util.checkTimeout(future);
+            JsonObject response = Util.createGenericResponse(message);
 
             DesignDocument value = (DesignDocument) future.get();
 
@@ -139,10 +137,8 @@ public enum CouchbaseCommandPacketAsync {
             // was key sent
             if (key != null) {
                 query.setKey(key);
-            }
-
-            // was keys sent
-            if (keys != null) {
+            } else if (keys != null) {
+                System.out.println("Setting keys: " + String.valueOf(keys));
                 query.setKeys(String.valueOf(keys));
             }
 
@@ -160,21 +156,21 @@ public enum CouchbaseCommandPacketAsync {
                 return null;
             }
 
-            checkTimeout(future);
+            Util.checkTimeout(future);
 
-            JsonObject response = createGenericResponse(message);
+            JsonObject response = Util.createGenericResponse(message);
             ViewResponse futureResponse = (ViewResponse)future.get();
             response.putBoolean("success", true);
 
 
             JsonObject result = new JsonObject();
 
-//            System.out.println("Future is: " + futureResponse.toString());
+//            System.out.println("Future is: " + futureResponse.getMap());
 
             result.putArray("result", new JsonArray(futureResponse.getMap().values().toArray()));
 
 //            for (ViewRow row : futureResponse) {
-//                result.putArray("result", new JsonArray(row.getValue()));
+//                result.putArray("result", new JsonArray(row.Util.getValue()));
 //            }
 
             response.putObject("response", result);
@@ -193,7 +189,7 @@ public enum CouchbaseCommandPacketAsync {
     INCR() {
         @Override
         public Future operation(CouchbaseClient cb, Message<JsonObject> message) throws Exception {
-            String key = getKey(message);
+            String key = Util.getKey(message);
 
             Number by = message.body().getNumber("by") == null? 1 : message.body().getNumber("by");
             OperationFuture<Long> operationFuture;
@@ -222,8 +218,8 @@ public enum CouchbaseCommandPacketAsync {
             if(!returnAcknowledgement) {
                 return null;
             }
-            checkTimeout(future);
-            JsonObject response = createGenericResponse(message);
+            Util.checkTimeout(future);
+            JsonObject response = Util.createGenericResponse(message);
             JsonObject data = new JsonObject();
 
             response.putObject("data", data);
@@ -237,7 +233,7 @@ public enum CouchbaseCommandPacketAsync {
                 data.putNumber("value", incr_val);
             } else {
                 response.putBoolean("success", false);
-                response.putString("reason", "failed to fetch key '" + getKey(message) + "'");
+                response.putString("reason", "failed to fetch key '" + Util.getKey(message) + "'");
             }
             return response;
         }
@@ -245,7 +241,7 @@ public enum CouchbaseCommandPacketAsync {
     DECR() {
         @Override
         public Future operation(CouchbaseClient cb, Message<JsonObject> message) throws Exception {
-            String key = getKey(message);
+            String key = Util.getKey(message);
             Long by = message.body().getLong("by");
             if (by == null) {
                 throw new Exception("missing mandatory non-empty field 'by'");
@@ -259,8 +255,8 @@ public enum CouchbaseCommandPacketAsync {
             if(!returnAcknowledgement) {
                 return null;
             }
-            checkTimeout(future);
-            JsonObject response = createGenericResponse(message);
+            Util.checkTimeout(future);
+            JsonObject response = Util.createGenericResponse(message);
             JsonObject data = new JsonObject();
             response.putObject("data", data);
             Long decr_val = (Long) future.get();
@@ -269,24 +265,24 @@ public enum CouchbaseCommandPacketAsync {
                 data.putNumber("value", decr_val);
             } else {
                 response.putBoolean("success", false);
-                response.putString("reason", "failed to fetch key '" + getKey(message) + "'");
+                response.putString("reason", "failed to fetch key '" + Util.getKey(message) + "'");
             }
             return response;
         }
     },
 
 
-    /* 
-    * Storage Operations 
+    /*
+    * Storage Operations
     * SET, ADD, REPLACE, CAS, APPEND, PREPEND, TOUCH
-    * 
+    *
     */
 
-    
+
     SET() {
         @Override
         public Future operation(CouchbaseClient cb, Message<JsonObject> message) throws Exception {
-            String key = getKey(message);
+            String key = Util.getKey(message);
 
             Object value = message.body().getField("value");
             int expires = message.body().getInteger("expiry") == null ? 0 : message.body().getInteger("expiry");
@@ -305,8 +301,8 @@ public enum CouchbaseCommandPacketAsync {
             if(!returnAcknowledgement) {
                 return null;
             }
-            checkTimeout(future);
-            JsonObject response = createGenericResponse(message);
+            Util.checkTimeout(future);
+            JsonObject response = Util.createGenericResponse(message);
             response.putBoolean("success", future != null);
             if (future == null) {
                 response.putString("reason", "operation timed out");
@@ -317,7 +313,7 @@ public enum CouchbaseCommandPacketAsync {
     ADD() {
         @Override
         public Future operation(CouchbaseClient cb, Message<JsonObject> message) throws Exception {
-            String key = getKey(message);
+            String key = Util.getKey(message);
 
             Integer exp = message.body().getInteger("expiry") == null ? 0 : message.body().getInteger("expiry");
             PersistTo persistTo = (message.body().getInteger("persistTo") == null ? PersistTo.ZERO : PersistTo.values()[message.body().getInteger("persistTo")]);
@@ -337,14 +333,14 @@ public enum CouchbaseCommandPacketAsync {
             if(!returnAcknowledgement) {
                 return null;
             }
-            checkTimeout(future);
-            JsonObject response = createGenericResponse(message);
+            Util.checkTimeout(future);
+            JsonObject response = Util.createGenericResponse(message);
 //            JsonObject data = new JsonObject();
 //            response.putObject("data", data);
             boolean success = (Boolean)future.get();
             response.putBoolean("success", success);
             if (!success) {
-                response.putString("reason", "failed to fetch key '" + getKey(message) + "'");
+                response.putString("reason", "failed to fetch key '" + Util.getKey(message) + "'");
             }
 
             return response;
@@ -353,7 +349,7 @@ public enum CouchbaseCommandPacketAsync {
     REPLACE() {
         @Override
         public Future operation(CouchbaseClient cb, Message<JsonObject> message) throws Exception {
-            String key = getKey(message);
+            String key = Util.getKey(message);
 
             Integer exp = message.body().getInteger("expiry") == null ? 0 : message.body().getInteger("expiry");
             Integer persistTo = message.body().getInteger("persistTo") == null ? -1 : message.body().getInteger("persistTo");
@@ -367,14 +363,14 @@ public enum CouchbaseCommandPacketAsync {
 
         @Override
         public JsonObject buildResponse(Message<JsonObject> message, Future future, boolean returnAcknowledgement) throws Exception {
-            checkTimeout(future);
-            JsonObject response = createGenericResponse(message);
+            Util.checkTimeout(future);
+            JsonObject response = Util.createGenericResponse(message);
             JsonObject data = new JsonObject();
             response.putObject("data", data);
             boolean success = (Boolean) future.get();
             response.putBoolean("success", success);
             if (!success) {
-                response.putString("reason", "failed to fetch key '" + getKey(message) + "'");
+                response.putString("reason", "failed to fetch key '" + Util.getKey(message) + "'");
             }
             return response;
         }
@@ -383,7 +379,7 @@ public enum CouchbaseCommandPacketAsync {
         @Override
         public Future operation(CouchbaseClient cb, Message<JsonObject> message) throws Exception {
 
-            String key = getKey(message);
+            String key = Util.getKey(message);
 
             //Integer exp = message.body().getInteger("expiry") == null ? 0 : message.body().getInteger("expiry");
             Long cas = message.body().getLong("cas") == null ? -1 : message.body().getLong("cas");
@@ -405,14 +401,14 @@ public enum CouchbaseCommandPacketAsync {
 
         @Override
         public JsonObject buildResponse(Message<JsonObject> message, Future future, boolean returnAcknowledgement) throws Exception {
-            checkTimeout(future);
-            JsonObject response = createGenericResponse(message);
+            Util.checkTimeout(future);
+            JsonObject response = Util.createGenericResponse(message);
             JsonObject data = new JsonObject();
             response.putObject("data", data);
             boolean success = (Boolean) future.get();
             response.putBoolean("success", success);
             if (!success) {
-                response.putString("reason", "failed to fetch key '" + getKey(message) + "'");
+                response.putString("reason", "failed to fetch key '" + Util.getKey(message) + "'");
             }
             return response;
         }
@@ -420,7 +416,7 @@ public enum CouchbaseCommandPacketAsync {
     APPEND() {
         @Override
         public Future operation(CouchbaseClient cb, Message<JsonObject> message) throws Exception {
-            String key = getKey(message);
+            String key = Util.getKey(message);
             Long cas = message.body().getLong("cas");
             if (cas == null) {
                 throw new Exception("missing mandatory non-empty field 'cas'");
@@ -435,14 +431,14 @@ public enum CouchbaseCommandPacketAsync {
             if(!returnAcknowledgement) {
                 return null;
             }
-            checkTimeout(future);
-            JsonObject response = createGenericResponse(message);
+            Util.checkTimeout(future);
+            JsonObject response = Util.createGenericResponse(message);
             JsonObject data = new JsonObject();
             response.putObject("data", data);
             boolean success = (Boolean)future.get();
             response.putBoolean("success", success);
             if (!success) {
-                response.putString("reason", "failed to fetch key '" + getKey(message) + "'");
+                response.putString("reason", "failed to fetch key '" + Util.getKey(message) + "'");
             }
 
             return response;
@@ -451,7 +447,7 @@ public enum CouchbaseCommandPacketAsync {
     PREPEND() {
         @Override
         public Future operation(CouchbaseClient cb, Message<JsonObject> message) throws Exception {
-            String key = getKey(message);
+            String key = Util.getKey(message);
             Long cas = message.body().getLong("cas");
             if (cas == null) {
                 throw new Exception("missing mandatory non-empty field 'cas'");
@@ -466,14 +462,14 @@ public enum CouchbaseCommandPacketAsync {
             if(!returnAcknowledgement) {
                 return null;
             }
-            checkTimeout(future);
-            JsonObject response = createGenericResponse(message);
+            Util.checkTimeout(future);
+            JsonObject response = Util.createGenericResponse(message);
             JsonObject data = new JsonObject();
             response.putObject("data", data);
             boolean success = (Boolean)future.get();
             response.putBoolean("success", success);
             if (!success) {
-                response.putString("reason", "failed to fetch key '" + getKey(message) + "'");
+                response.putString("reason", "failed to fetch key '" + Util.getKey(message) + "'");
             }
 
             return response;
@@ -482,7 +478,7 @@ public enum CouchbaseCommandPacketAsync {
     TOUCH() {
         @Override
         public Future operation(CouchbaseClient cb, Message<JsonObject> message) throws Exception {
-            String key = getKey(message);
+            String key = Util.getKey(message);
             Integer exp = message.body().getInteger("expiry");
             if (exp == null) {
                 throw new Exception("missing mandatory non-empty field 'exp'");
@@ -496,14 +492,14 @@ public enum CouchbaseCommandPacketAsync {
             if(!returnAcknowledgement) {
                 return null;
             }
-            checkTimeout(future);
-            JsonObject response = createGenericResponse(message);
+            Util.checkTimeout(future);
+            JsonObject response = Util.createGenericResponse(message);
             JsonObject data = new JsonObject();
             response.putObject("data", data);
             boolean success = (Boolean) future.get();
             response.putBoolean("success", success);
             if (!success) {
-                response.putString("reason", "failed to fetch key '" + getKey(message) + "'");
+                response.putString("reason", "failed to fetch key '" + Util.getKey(message) + "'");
             }
             return response;
         }
@@ -520,7 +516,7 @@ public enum CouchbaseCommandPacketAsync {
     GET() {
         @Override
         public Future operation(CouchbaseClient cb, Message<JsonObject> message) throws Exception {
-            String key = getKey(message);
+            String key = Util.getKey(message);
             GetFuture<Object> f = cb.asyncGet(key);
             return f;
         }
@@ -528,15 +524,15 @@ public enum CouchbaseCommandPacketAsync {
         @Override
         public JsonObject buildResponse(Message<JsonObject> message, Future future, boolean returnAcknowledgement) throws Exception {
 
-            checkTimeout(future);
-            JsonObject response = createGenericResponse(message);
+            Util.checkTimeout(future);
+            JsonObject response = Util.createGenericResponse(message);
             JsonObject data = new JsonObject();
 
             Object value = future.get();
             response.putString("key", message.body().getString("key"));
 
 
-            data = parseForJson(data, "value", value);
+            data = Util.parseForJson(data, "value", value);
 
             if (value == null)
                 response.putBoolean("exists", false);
@@ -567,14 +563,14 @@ public enum CouchbaseCommandPacketAsync {
 
         @Override
         public JsonObject buildResponse(Message<JsonObject> message, Future future, boolean returnAcknowledgement) throws Exception {
-            checkTimeout(future);
-            JsonObject response = createGenericResponse(message);
+            Util.checkTimeout(future);
+            JsonObject response = Util.createGenericResponse(message);
             JsonObject data = new JsonObject();
             response.putObject("data", data);
             Map<String, Object> result = (Map<String, Object>) future.get();
             for (String k : result.keySet()) {
                 Object value = result.get(k);
-                data = parseForJson(data, k, value);
+                data = Util.parseForJson(data, k, value);
             }
             response.putBoolean("success", true);
 
@@ -584,15 +580,15 @@ public enum CouchbaseCommandPacketAsync {
     STATUS() {
         @Override
         public Future operation(CouchbaseClient cb, Message<JsonObject> message) throws Exception {
-            Future<JsonArray[]> f = syncExecutor.submit(new StatusCallable(cb));
+            Future<JsonArray[]> f = Util.syncExecutor.submit(new StatusCallable(cb));
             return f;
         }
 
         @Override
         public JsonObject buildResponse(Message<JsonObject> message, Future future, boolean returnAcknowledgement) throws Exception {
-            checkTimeout(future);
+            Util.checkTimeout(future);
             JsonArray[] status = (JsonArray[]) future.get();
-            JsonObject response = createGenericResponse(message);
+            JsonObject response = Util.createGenericResponse(message);
             JsonObject data = new JsonObject();
             response.putObject("data", data);
             response.putBoolean("success", true);
@@ -604,7 +600,7 @@ public enum CouchbaseCommandPacketAsync {
     GAT() {
         @Override
         public Future operation(CouchbaseClient cb, Message<JsonObject> message) throws Exception {
-            String key = getKey(message);
+            String key = Util.getKey(message);
             Integer exp = message.body().getInteger("expiry");
             if (exp == null) {
                 throw new Exception("missing mandatory non-empty field 'exp'");
@@ -615,13 +611,13 @@ public enum CouchbaseCommandPacketAsync {
 
         @Override
         public JsonObject buildResponse(Message<JsonObject> message, Future future, boolean returnAcknowledgement) throws Exception {
-            checkTimeout(future);
-            JsonObject response = createGenericResponse(message);
+            Util.checkTimeout(future);
+            JsonObject response = Util.createGenericResponse(message);
             JsonObject data = new JsonObject();
             response.putObject("data", data);
             CASValue<Object> value = (CASValue<Object>) future.get();
             if (value != null) {
-                data = parseForJson(data, "key", value.getValue());
+                data = Util.parseForJson(data, "key", value.getValue());
                 Long c = value.getCas();
                 if (c != null) {
                     data.putNumber("cas", value.getCas());
@@ -629,7 +625,7 @@ public enum CouchbaseCommandPacketAsync {
                 response.putBoolean("success", true);
             } else {
                 response.putBoolean("success", false);
-                response.putString("reason", "failed to fetch key '" + getKey(message) + "'");
+                response.putString("reason", "failed to fetch key '" + Util.getKey(message) + "'");
             }
 
             return response;
@@ -639,15 +635,15 @@ public enum CouchbaseCommandPacketAsync {
     GETSTATS() {
         @Override
         public Future operation(CouchbaseClient cb, Message<JsonObject> message) throws Exception {
-            Future<Map<SocketAddress, Map<String, String>>> f = syncExecutor.submit(new ClusterStatsCallable(cb));
+            Future<Map<SocketAddress, Map<String, String>>> f = Util.syncExecutor.submit(new ClusterStatsCallable(cb));
             return f;
         }
 
         @Override
         public JsonObject buildResponse(Message<JsonObject> message, Future future, boolean returnAcknowledgement) throws Exception {
-            checkTimeout(future);
+            Util.checkTimeout(future);
             Map<SocketAddress, Map<String, String>> stats = (Map<SocketAddress, Map<String, String>>) future.get();
-            JsonObject response = createGenericResponse(message);
+            JsonObject response = Util.createGenericResponse(message);
             JsonObject data = new JsonObject();
             for (SocketAddress sa : stats.keySet()) {
                 JsonObject s = new JsonObject();
@@ -674,7 +670,7 @@ public enum CouchbaseCommandPacketAsync {
     DELETE() {
         @Override
         public Future operation(CouchbaseClient cb, Message<JsonObject> message) throws Exception {
-            String key = getKey(message);
+            String key = Util.getKey(message);
             OperationFuture<Boolean> operationFuture = cb.delete(key);
             return operationFuture;
         }
@@ -684,14 +680,14 @@ public enum CouchbaseCommandPacketAsync {
             if(!returnAcknowledgement) {
                 return null;
             }
-            checkTimeout(future);
-            JsonObject response = createGenericResponse(message);
+            Util.checkTimeout(future);
+            JsonObject response = Util.createGenericResponse(message);
             JsonObject data = new JsonObject();
             response.putObject("data", data);
             boolean success = (Boolean) future.get();
             response.putBoolean("success", success);
             if (!success) {
-                response.putString("reason", "failed to fetch key '" + getKey(message) + "'");
+                response.putString("reason", "failed to fetch key '" + Util.getKey(message) + "'");
             }
             return response;
         }
@@ -709,8 +705,8 @@ public enum CouchbaseCommandPacketAsync {
             if(!returnAcknowledgement) {
                 return null;
             }
-            checkTimeout(future);
-            JsonObject response = createGenericResponse(message);
+            Util.checkTimeout(future);
+            JsonObject response = Util.createGenericResponse(message);
             JsonObject data = new JsonObject();
             response.putObject("data", data);
             boolean success = (Boolean)future.get();
@@ -718,56 +714,6 @@ public enum CouchbaseCommandPacketAsync {
             return response;
         }
     };
-
-    private static JsonObject createGenericResponse(Message<JsonObject> message) {
-        JsonObject response = new JsonObject();
-        response.putString("op", message.body().getString("op").toUpperCase());
-        response.putString("key", message.body().getString("key"));
-        response.putNumber("timestamp", System.currentTimeMillis());
-        return response;
-    }
-
-    public static String voidNull(String s) {
-        return s == null ? "" : s;
-    }
-    
-    private static void checkTimeout(Future f) throws TimeoutException {
-        if(f == null) {
-            throw new TimeoutException();
-        }
-    }
-    
-    private static String getKey(Message<JsonObject> message) throws Exception {
-        String key = voidNull(message.body().getString("key"));
-        if (key.isEmpty()) {
-            throw new Exception("missing mandatory non-empty field 'key'");
-        }
-        return key;
-    }
-
-    private static JsonObject parseForJson(JsonObject jsonObject, String key, Object value) throws Exception {
-        if (value != null) {
-            // not serializable in current version of vert.x
-            /*
-            * if(value instanceof JsonArray) jsonObject.putArray("value", (JsonArray) value); else if(value instanceof JsonObject) jsonObject.putObject("value", (JsonObject) value); else
-            */
-
-            if (value instanceof byte[]) {
-                jsonObject.putBinary(key, (byte[]) value);
-            } else if (value instanceof Boolean) {
-                jsonObject.putBoolean(key, (Boolean) value);
-            } else if (value instanceof Number) {
-                jsonObject.putNumber(key, (Number) value);
-            } else if (value instanceof String) {
-                jsonObject.putString(key, (String) value);
-            } else {
-                throw new Exception("unsupported object type");
-            }
-        }
-        return jsonObject;
-    }
-
-    private static ExecutorService syncExecutor = Executors.newFixedThreadPool(2);
 
     //no default implementation
     public abstract Future operation(CouchbaseClient cb, Message<JsonObject> message) throws Exception;

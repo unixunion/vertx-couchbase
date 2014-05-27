@@ -3,6 +3,7 @@ package com.scalabl3.vertxmods.couchbase.async;
 import com.couchbase.client.ClusterManager;
 import com.couchbase.client.CouchbaseClient;
 import com.scalabl3.vertxmods.couchbase.ParseNodeList;
+import com.scalabl3.vertxmods.couchbase.Util;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
@@ -25,11 +26,14 @@ import java.util.concurrent.TimeoutException;
  * Couchbase 2.x client for vert.x<p>
  * Please see the manual for a full description<p>
  *
- * Based partially on spymemcached client for vert.x by <a href="mailto:atarno@gmail.com">Asher Tarnopolski</a>
+ * This is a fork of https://github.com/scalabl3/vertx-couchbase
  *
+ * Based partially on spymemcached client for vert.x by <a href="mailto:atarno@gmail.com">Asher Tarnopolski</a>
  * @author <a href="mailto:jasdeep@scalabl3.com">Jasdeep Jaitla</a>
+ * @author <a href="mailto:marzubus@gmail.com">Kegan Holtzhausen</a>
  *
  */
+
 public class CouchbaseEventBusAsync extends Verticle {
     private String eventbusAddress;
     private String cbnodes;
@@ -94,8 +98,8 @@ public class CouchbaseEventBusAsync extends Verticle {
 
     Handler<Message<JsonObject>> memHandler = new Handler<Message<JsonObject>>() {
         public void handle(Message<JsonObject> message) {
-            String command = CouchbaseCommandPacketAsync.voidNull(message.body().getString("op"));
-            String management_command = CouchbaseCommandPacketAsync.voidNull(message.body().getString("management"));
+            String command = Util.voidNull(message.body().getString("op"));
+            String management_command = Util.voidNull(message.body().getString("management"));
 
             if (command.isEmpty() && management_command.isEmpty()) {
                 sendError(message, "\"op\" OR \"management\" property is mandatory for request");

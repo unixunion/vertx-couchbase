@@ -9,7 +9,7 @@ import org.vertx.java.platform.Verticle;
 /**
  * Created by keghol on 5/26/14.
  */
-public class SimpleReadTest extends Verticle implements Handler<Message<JsonObject>> {
+public class SimpleWriteTest extends Verticle implements Handler<Message<JsonObject>> {
 
     private long start;
     private int count = 0;
@@ -19,7 +19,7 @@ public class SimpleReadTest extends Verticle implements Handler<Message<JsonObje
     private EventBus eb;
 
     public void start() {
-        System.out.println("Starting Simple Read Test");
+        System.out.println("Starting Simple Write Test");
         config = Util.loadConfig(this, "/conf-perftest.json");
         eb = vertx.eventBus();
         makeRequest();
@@ -50,8 +50,9 @@ public class SimpleReadTest extends Verticle implements Handler<Message<JsonObje
         while (requestCredits > 0) {
 
             JsonObject request = new JsonObject()
-                    .putString("op", "get")
-                    .putString("key", "user" + (int) (10000 * Math.random()))
+                    .putString("op", "set")
+                    .putString("key", "write" + (int) (10000 * Math.random()))
+                    .putString("value", "badger badger badger badger")
                     .putBoolean("ack", true);
 
             eb.send(config.getString("address"), request, this);

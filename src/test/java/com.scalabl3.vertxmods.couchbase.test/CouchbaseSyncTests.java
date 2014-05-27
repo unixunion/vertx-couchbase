@@ -162,7 +162,6 @@ public class CouchbaseSyncTests extends TestVerticle{
         });
     }
 
-
     @Test
     public void get_missing_design_document() {
         JsonObject request = new JsonObject().putString("op", "GETDESIGNDOC")
