@@ -135,7 +135,7 @@ public class Main extends TestVerticle {
     @Test
     public void get() {
         JsonObject request = new JsonObject().putString("op", "GET")
-                .putString("key", "1")
+                .putString("key", "user1")
                 .putBoolean("ack", true);
 
         container.logger().info("sending message to address: " + config.getString("address"));
@@ -146,7 +146,7 @@ public class Main extends TestVerticle {
                 try {
                     System.out.println("Response: " + reply.body());
                     JsonObject body = reply.body();
-                    assertNotNull(body.toString());
+                    assertTrue(body.getObject("response").getBoolean("exists"));
                     testComplete();
                 } catch (Exception e) {
                     e.printStackTrace();

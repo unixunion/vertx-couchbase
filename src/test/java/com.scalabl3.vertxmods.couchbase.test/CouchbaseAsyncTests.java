@@ -173,6 +173,25 @@ public class CouchbaseAsyncTests extends TestVerticle{
     }
 
     @Test
+    public void set() {
+
+        JsonObject request = new JsonObject().putString("op", "SET")
+                .putString("key", "user1001")
+                .putString("value", "data")
+                .putBoolean("ack", true);
+
+        vertx.eventBus().send(config.getString("address"), request, new Handler<Message<JsonObject>>() {
+
+            @Override
+            public void handle(final Message<JsonObject> reply) {
+                System.out.println("Try to deserialize reply: " + reply.body().toString());
+                testComplete();
+            }
+        });
+    }
+
+
+    @Test
     public void add_keys() {
         count_max = 15000;
         startTime = System.currentTimeMillis();

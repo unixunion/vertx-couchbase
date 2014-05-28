@@ -121,7 +121,7 @@ Creates a bucket
 
 #### DELETEBUCKET
 
-Deletes a bucket
+Deletes a bucket, you might want to flush it first!
 
 ##### request
 
@@ -146,7 +146,8 @@ Deletes a bucket
 
 #### FLUSHBUCKET
 
-Deletes all documents in a bucket
+Deletes all documents in a bucket, please note the response comes back when the cluster accepts your command, NOT when
+the bucket is flushed!
 
 ##### request
 
@@ -316,26 +317,112 @@ Returns the design doc for a view.
 ```
 
 #### SET
+Set a key
+
+##### request
+```json
+
+{
+  "op": "SET",
+  "key": "user1001",
+  "value", "data",
+  "ack": true
+}
+```
+
+##### response
+{
+  "response": {
+    "op": "SET",
+    "key": "user1001",
+    "keys": null,
+    "timestamp": 1401269324115,
+    "success": true
+  }
+}
+
+
+This is a  slightly different example by creating a hashmap and then converting that to the JSON message via another method.
 
 ```java
 
     ArrayList<String> x = new ArrayList<String>();
-    x.add("couchbase");
-    x.add("nuodb");
+    x.add("somedata");
+    x.add("somemoredata");
     
     cbop.put("op", "set");
-    cbop.put("key", "op_get");
+    cbop.put("key", "user1001");
     cbop.put("value", encode(x));
     cbop.put("ack", true);
     act(cbop);
 
 ```
 
+The act method.
+```java
+    public void act(HashMap<String, Object> cmd)
+    {
+        if(cmd == null)
+            return;
+
+        JsonObject notif = new JsonObject();
+
+        for(String key : cmd.keySet())
+        {
+            Object value = cmd.get(key);
+
+            if(value != null)
+            {
+                if(value instanceof byte[])
+                    notif.putBinary(key, (byte[]) value);
+                else if(value instanceof Boolean)
+                    notif.putBoolean(key, (Boolean) value);
+                else if(value instanceof Number)
+                    notif.putNumber(key, (Number) value);
+                else if(value instanceof String)
+                    notif.putString(key, (String) value);
+                else if(value instanceof JsonArray)
+                    notif.putArray(key, (JsonArray) value);
+            }
+        }
+        System.out.println("sent: \n" + notif.encode());
+        push(notif); // push method send the JSON object to the listening address.
+    }
+```
+
+#### GET
+##### request
+```json
+
+{
+  "op": "GET",
+  "key": "user1",
+  "ack": true
+}
+```
+
+##### response
+```json
+{
+  "response": {
+    "op": "GET",
+    "key": "user1",
+    "keys": null,
+    "timestamp": 1401269292224,
+    "exists": true,
+    "data": {
+      "value": "{\"username\":\"user1\",\"password\":\"somepassword\"}"
+    },
+    "success": true
+  }
+}
+```
 
 
 #### Query
+Query a view for some documents.
 
-I have the following documents:
+Assuming I have the following document structure.
 
 ```json
 {
@@ -348,7 +435,7 @@ and the following view
 
 ```js
 function (doc, meta) {
-  emit([doc.username, doc.password], [doc.username]);
+  emit(doc.username, [doc.username, doc.password]);
 }
 ```
 
@@ -359,7 +446,7 @@ example query to send over eventbus in JSON.
     "op":"QUERY",
     "design_doc":"users",
     "view_name":"users",
-    "key":"[\"user0\",\"somepassword\"]",
+    "key":"user0",
     "include_docs":true,
     "ack":true
 }
@@ -376,6 +463,9 @@ JsonObject request = new JsonObject().putString("op", "QUERY")
 vertx.eventBus().send(config.getString("address"), request, new Handler<Message<JsonObject>>()...
 ```
 
+
+
+
 ### Performance and Testing
 A couple of tests for sync. 
 
@@ -388,34 +478,3 @@ A couple of tests for sync.
 
 #### Performance Test
 ./gradlew test -Dtest.single=TestPerformance
-
-### SET
-
-When creating documents, be sure to envode the valye portion with Gson
-
-Example
-```java
-
-private String encode(Object val) {
-        Gson gson = new Gson();
-        return gson.toJson(val);
-}
-
-// simple userclass instance
-User user = new User("someusername", "somepassword");
-
-// put the object into the value portion of a op:ADD event
-JsonObject request = new JsonObject().putString("op", "ADD")
-                .putString("key", id.toString())
-                .putString("value", encode(user)
-                .putNumber("expiry", 300)
-                .putBoolean("ack", true);
-                
-// send it off
-vertx.eventBus().send("vertx.couchbase.sync", request, new Handler<Message<JsonObject>>()...
-
-```
-
-### GET
-
-### QUERY
