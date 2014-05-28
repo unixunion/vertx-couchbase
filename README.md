@@ -3,50 +3,80 @@
 a couchbase eventbus worker. 
 This worker connects to your couchbase cluster and listens on the VertX eventbus for queries.
 
-This is a gradle-fied and modified version of scalabl3/vertx-couchbase, Things I am adding:
+This is fork of scalabl3/vertx-couchbase, extended to support:
 
-VIEW based queries
-Boot class ( read config, boot async/sync mode )
-Testing ( sync )
+* View based queries
+* Cluster management commands
+* Boot class
+* Testing testing testing
+* Performance Testing
 
+## Sync vs Async
 
+Sync and Async differ slightly in that Sync mode accepts persistTo and replicateTo flags, which are blocking calls, So those flags are NOT supported in Async until couchbase supports Observe. See: [http://www.couchbase.com/wiki/display/couchbase/Observe]
+
+All management commands currently only supported in Async mode.
 
 ## Building
-see "gradlew tasks"
+This is a gradle project, so please see "gradlew tasks", typical options are:
 
-## Deploying to you Repo
-Depending on your ~/.m2/settings.xml
+### FatJar
+```./gradlew fatJar```
+
+Everything rolled into one huge jar which you can run with: "java -jar somefatjar.jar -cp somepath to resources -conf someconf.json -cluster"
+
+See resources directory for default configs.
+
+### Build
+```./gradlew build```
+
+Build the VertX module as per usual, the resulting module is normally run with "vertx run fully-qualified-module-name -conf someconf.json"
+
+### ModZip
+```./gradlew modZip```
+
+Wrap the build up into zip which is portable without m2 repos. Run with "vertx runzip …"
+
+### Install
+```./gradlew install```
+
+Send the module to your maven-like repo, depending on your ~/.m2/settings.xml
 see "gradlew install"
 
-## Configure
-### basic
-couchbase mod accepts a json conf file as per vertx standards. 
+## Configuration
+
+couchbase mod accepts a json conf file as per vertx standards. this can be passed with -conf somefile.json on the command line. 
 
 ```json
+
 // Example couchbase mod configuration
 
 {
-  "async_mode": false, // tells the Boot class to start async or sync mode
-  "address": "vertx.couchbase.sync", // the eventbus address this module listens on
+  "async_mode": true, // tells the Boot class to start async or sync mode
+  "address": "vertx.couchbase.async", // the eventbus address this module listens on
   "couchbase.nodelist": "localhost:8091", // comma separated list of couchbase nodes
-  "couchbase.bucket": "ivault", // the bucket to connect to
+  "couchbase.bucket": "default", // the bucket to connect to
   "couchbase.bucket.password": "", // password if any for the bucket
-  "couchbase.num.clients": 4 // number of clients to open towards the couch instances
+  "couchbase.num.clients": 1, // number of clients to open towards the couch cluster
+  "couchbase.manager": true, // start the manager command listener
+  "couchbase.manager.username": "Administrator", // credentials to manager
+  "couchbase.manager.password": "password", // credentials for manager
 }
+
 ```
 
-### Clustering
+## Clustering
 if running fatjars, you can specify you own cluster.xml like:
 "java -jar some-fatjar.jar -cp /path/to/conf/dir -cluster -conf /path/to/conf/dir/config.json"
 
-if running via vertx itself you need to edit VERTX_HOME/conf/cluster.xml
+if running via vertx itself you can edit VERTX_HOME/conf/cluster.xml
 
 See hazelcast documentation and vertx documentation for more info.
 
 
 ## Running
 ### runmod
-vertx runmod com.scalabl3~vertxmods.couchbase~1.0.0-final -conf conf.json -cluster
+```vertx runmod com.scalabl3~vertxmods.couchbase~1.0.0-final -conf conf.json -cluster```
 
 ### fatJar
 if you built a fat-jar with gradlew fatJar, you can run it like so:
@@ -57,83 +87,15 @@ java -jar some-fatjar.jar -cp $CONF_DIR -cluster -conf $CONF_DIR/config.json
 
 ## Usage
 
-A note about Async vs Sync, Sync should be used if you need confirmation only after persistTo or replicateTo have 
-completed their quotas. Async mode does NOT support these yet until couch completes Observe. 
+This module speaks JSON, so you will want to send messages as JSON to the module, and encode data/value portions of your documents with Gson, see the tests directory for examples.
 
-see: http://www.couchbase.com/wiki/display/couchbase/Observe
+### Commands
 
-### General
-
-act method for building request json object
-
-```java
-
-    public void act(HashMap<String, Object> cmd) {
-        if (cmd == null)
-            return;
-    
-        JsonObject notif = new JsonObject();
-    
-        for (String key : cmd.keySet()) {
-            Object value = cmd.get(key);
-    
-            if (value != null) {
-                if (value instanceof byte[])
-                    notif.putBinary(key, (byte[]) value);
-                else if (value instanceof Boolean)
-                    notif.putBoolean(key, (Boolean) value);
-                else if (value instanceof Number)
-                    notif.putNumber(key, (Number) value);
-                else if (value instanceof String)
-                    notif.putString(key, (String) value);
-                else if (value instanceof JsonArray)
-                    notif.putArray(key, (JsonArray) value);
-            }
-        }
-        System.out.println("sent: \n" + notif.encode());
-        push(notif);
-    }
-
-```
-
-push method for sending the request
-
-```java
-
-    private void push(JsonObject notif, Boolean async) {
-
-        if (async) {
-
-            Handler<Message<JsonObject>> async_replyHandler = new Handler<Message<JsonObject>>() {
-                public void handle(Message<JsonObject> message) {
-                    System.out.println("async received: \n" + message.body().encode());
-                    post(message);
-                }
-            };
-            vertx.eventBus().send(async_config.getString("address"), notif, async_replyHandler);
-        
-        } else {
-
-            Handler<Message<JsonObject>> sync_replyHandler = new Handler<Message<JsonObject>>() {
-                public void handle(Message<JsonObject> message) {
-                    System.out.println("sync received: \n" + message.body().encode());
-                    post(message);
-                }
-            };
-            vertx.eventBus().send(sync_config.getString("address"), notif, sync_replyHandler);
-        
-        }
-    }
-
-```
-
-## Commands
-
-### CREATEBUCKET
+#### CREATEBUCKET
 
 Creates a bucket 
 
-#### request
+##### request
 ```json
 {
   "management": "CREATEBUCKET",
@@ -147,7 +109,7 @@ Creates a bucket
 }
 ```
 
-#### response
+##### response
 
 ```json
 {
@@ -157,11 +119,11 @@ Creates a bucket
 }
 ```
 
-### DELETEBUCKET
+#### DELETEBUCKET
 
 Deletes a bucket
 
-#### request
+##### request
 
 ```json
 {
@@ -171,7 +133,7 @@ Deletes a bucket
 }
 ```
 
-#### response
+##### response
 
 ```json
 {
@@ -182,11 +144,11 @@ Deletes a bucket
 
 ```
 
-### FLUSHBUCKET
+#### FLUSHBUCKET
 
 Deletes all documents in a bucket
 
-#### request
+##### request
 
 ```json
 {
@@ -196,7 +158,7 @@ Deletes all documents in a bucket
 }
 ```
 
-#### response
+##### response
 
 ```json
 {
@@ -207,9 +169,9 @@ Deletes all documents in a bucket
 
 ```
 
-### LISTBUCKETS
+#### LISTBUCKETS
 
-#### request
+##### request
 ```json
 {
     "management":"LISTBUCKETS",
@@ -217,7 +179,7 @@ Deletes all documents in a bucket
 }
 ```
 
-#### response
+##### response
 ```json
 {
   "response": {
@@ -231,11 +193,11 @@ Deletes all documents in a bucket
 }
 ```
 
-### CREATEDESIGNDOC
+#### CREATEDESIGNDOC
 
 Create a design doc and views
 
-#### request
+##### request
 ```json
 
 {
@@ -247,7 +209,7 @@ Create a design doc and views
 
 ```
 
-#### response
+##### response
 
 ```json
 
@@ -262,7 +224,7 @@ Create a design doc and views
 
 ```
 
-#### java example of request
+##### java example of request
 For ease, I recommend using 
 * com.couchbase.client.protocol.views.DesignDoc 
 * com.couchbase.client.protocol.views.ViewDesign
@@ -286,11 +248,11 @@ Example
                 
 ```
 
-### GETDESIGNDOC
+#### GETDESIGNDOC
 
 Returns the design doc for a view.
 
-#### request
+##### request
 ```json
 
 {
@@ -301,7 +263,7 @@ Returns the design doc for a view.
 
 ```
 
-#### response
+##### response
 
 ```json
 
@@ -325,9 +287,9 @@ Returns the design doc for a view.
 
 ```
 
-### DELETEDESIGNDOC
+#### DELETEDESIGNDOC
 
-#### request
+##### request
 ```json
 
 {
@@ -338,7 +300,7 @@ Returns the design doc for a view.
 
 ```
 
-#### response
+##### response
 
 ```json
 
@@ -353,7 +315,7 @@ Returns the design doc for a view.
 
 ```
 
-### SET
+#### SET
 
 ```java
 
@@ -370,15 +332,8 @@ Returns the design doc for a view.
 ```
 
 
-  {"response":{"op":"SET","key":"op_get","timestamp":1400848439299,"success":true,"response":{"success":true,"cas":18924200704321}}}
-    Result: {"response":{"op":"SET","key":"op_get","timestamp":1400848439299,"success":true,"response":{"success":true,"cas":18924200704321}}}
-    async received: 
-    {"response":{"op":"SET","key":"op_get","timestamp":1400848439348,"success":true}}
-    Result: {"response":{"op":"SET","key":"op_get","timestamp":1400848439348,"success":true}}
 
-
-
-### Query
+#### Query
 
 I have the following documents:
 
