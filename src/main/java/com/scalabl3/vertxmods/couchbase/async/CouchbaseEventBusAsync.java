@@ -108,6 +108,7 @@ public class CouchbaseEventBusAsync extends Verticle {
 
             if (!command.isEmpty() && !management_command.isEmpty()) {
                 sendError(message, "cannot perform OP and MANAGEMENT at the same time, choose one!");
+                return;
             }
 
             try {
@@ -215,14 +216,6 @@ public class CouchbaseEventBusAsync extends Verticle {
         message.reply(reply);
     }
 
-    private void connectClusterManager() throws IOException {
-        container.logger().info("Connecting ClusterManager");
-        clusterManager = new ClusterManager(ParseNodeList.getAddresses(cbnodes), manager_username, manager_password);
-    }
-
-    private ClusterManager getCMClient() {
-        return clusterManager;
-    }
 
     private void connectCouchbaseClients(int connections) throws IOException {
         container.logger().info("Connecting CouchbaseClients");
@@ -243,6 +236,15 @@ public class CouchbaseEventBusAsync extends Verticle {
             return null;
         }
         return CouchbaseCommandPacketAsync.valueOf(name.toUpperCase());
+    }
+
+    private void connectClusterManager() throws IOException {
+        container.logger().info("Connecting ClusterManager");
+        clusterManager = new ClusterManager(ParseNodeList.getAddresses(cbnodes), manager_username, manager_password);
+    }
+
+    private ClusterManager getCMClient() {
+        return clusterManager;
     }
 
     private CouchbaseManagerPacketAsync getMgmtByName(String name) {

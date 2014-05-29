@@ -53,7 +53,12 @@ public class SyncAsync extends TestVerticle{
         EventBus eb = vertx.eventBus();
 
         async_config = Util.loadConfig(this, "/conf-async.json");
+        async_config.removeField("bucket");
+        async_config.putString("bucket", "test_async");
+
         sync_config = Util.loadConfig(this, "/conf-sync.json");
+        sync_config.removeField("bucket");
+        sync_config.putString("bucket", "test_sync");
 
         System.out.println("\n\nDeploy Worker Verticle Couchbase\n\n");
 
@@ -117,15 +122,17 @@ public class SyncAsync extends TestVerticle{
         System.out.println("Flush buckets for pre-test");
         JsonObject request = new JsonObject()
                 .putString("management", "FLUSHBUCKET")
-                .putString("name", "async")
+                .putString("name", async_config.getString("bucket"))
                 .putBoolean("ack", true);
         push(request, true);
 
         request = new JsonObject()
                 .putString("management", "FLUSHBUCKET")
-                .putString("name", "sync")
+                .putString("name", sync_config.getString("bucket"))
                 .putBoolean("ack", true);
-        push(request, true);
+        push(request, false);
+
+
 
 //        System.out.println("Deleting buckets for pre-test");
 //        request = new JsonObject()
@@ -143,7 +150,7 @@ public class SyncAsync extends TestVerticle{
         System.out.println("Creating buckets for pre-test");
         request = new JsonObject()
                 .putString("management", "CREATEBUCKET")
-                .putString("name", "async")
+                .putString("name", async_config.getString("bucket"))
                 .putString("bucketType", "couchbase")
                 .putNumber("memorySizeMB", 128)
                 .putNumber("replicas", 0)
@@ -154,15 +161,14 @@ public class SyncAsync extends TestVerticle{
 
         request = new JsonObject()
                 .putString("management", "CREATEBUCKET")
-                .putString("name", "sync")
+                .putString("name", sync_config.getString("bucket"))
                 .putString("bucketType", "couchbase")
                 .putNumber("memorySizeMB", 128)
                 .putNumber("replicas", 0)
                 .putString("authPassword", sync_config.getString("couchbase.bucket.password"))
                 .putBoolean("flushEnabled", true)
                 .putBoolean("ack", true);
-
-        push(request, true);
+        push(request, false);
 
     }
 
@@ -406,7 +412,6 @@ public class SyncAsync extends TestVerticle{
         System.out.println("Result: " + result.body());
 
         post_count=post_count+1;
-//        posts[post_count] = result;
         posts.add(result);
 
         if (post_count >=2) {
@@ -425,6 +430,9 @@ public class SyncAsync extends TestVerticle{
     private void push(JsonObject notif, Boolean async) {
 
         if (async) {
+            System.out.println("async message: " + notif.toString());
+            System.out.println("async address:" + async_config.getString("address"));
+            System.out.println("async bucket:" + async_config.getString("bucket"));
 
             Handler<Message<JsonObject>> async_replyHandler = new Handler<Message<JsonObject>>() {
                 public void handle(Message<JsonObject> message) {
@@ -432,18 +440,20 @@ public class SyncAsync extends TestVerticle{
                     post(message);
                 }
             };
-            System.out.println("sending to:" + async_config.getString("address"));
+
             vertx.eventBus().send(async_config.getString("address"), notif, async_replyHandler);
 
         } else {
-
+            System.out.println("sync message: " + notif.toString());
+            System.out.println("sync address:" + sync_config.getString("address"));
+            System.out.println("sync bucket:" + async_config.getString("bucket"));
             Handler<Message<JsonObject>> sync_replyHandler = new Handler<Message<JsonObject>>() {
                 public void handle(Message<JsonObject> message) {
                     System.out.println("sync received: \n" + message.body().encode());
                     post(message);
                 }
             };
-            System.out.println("sending to:" + sync_config.getString("address"));
+
             vertx.eventBus().send(sync_config.getString("address"), notif, sync_replyHandler);
 
         }
@@ -455,7 +465,24 @@ public class SyncAsync extends TestVerticle{
     }
 
 
+    /*
+    nuke the test buckets
+     */
+    @Test
+    public void zzz_tearDown() {
+        System.out.println("Delete buckets");
+        JsonObject request = new JsonObject()
+                .putString("management", "DELETEBUCKET")
+                .putString("name", async_config.getString("bucket"))
+                .putBoolean("ack", true);
+        push(request, true);
 
+        request = new JsonObject()
+                .putString("management", "DELETEBUCKET")
+                .putString("name", sync_config.getString("bucket"))
+                .putBoolean("ack", false);
+        push(request, false);
+    }
 
 
 }

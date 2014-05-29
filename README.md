@@ -13,44 +13,39 @@ This is fork of scalabl3/vertx-couchbase, extended to support:
 
 ## Sync vs Async
 
-Sync and Async differ slightly in that Sync mode accepts persistTo and replicateTo flags, which are blocking calls, So those flags are NOT supported in Async until couchbase supports Observe. See: [http://www.couchbase.com/wiki/display/couchbase/Observe]
-
-All management commands currently only supported in Async mode.
+Sync and Async differ slightly in that Sync mode accepts persistTo and replicateTo flags, which are blocking calls, 
+So those flags are NOT supported in Async until CouchBase supports Observe. See: [http://www.couchbase.com/wiki/display/couchbase/Observe]
 
 ## Building
 This is a gradle project, so please see "gradlew tasks", typical options are:
 
-### FatJar
+### fatJar
 ```./gradlew fatJar```
 
 Everything rolled into one huge jar which you can run with: "java -jar somefatjar.jar -cp somepath to resources -conf someconf.json -cluster"
 
 See resources directory for default configs.
 
-### Build
+### build
 ```./gradlew build```
 
 Build the VertX module as per usual, the resulting module is normally run with "vertx run fully-qualified-module-name -conf someconf.json"
 
-### ModZip
+### modZip
 ```./gradlew modZip```
 
 Wrap the build up into zip which is portable without m2 repos. Run with "vertx runzip …"
 
-### Install
+### install
 ```./gradlew install```
 
-Send the module to your maven-like repo, depending on your ~/.m2/settings.xml
-see "gradlew install"
+Send the module to your maven-like repo, depending on your ~/.m2/settings.xml.
 
 ## Configuration
 
-couchbase mod accepts a json conf file as per vertx standards. this can be passed with -conf somefile.json on the command line. 
+This mod accepts a json conf file as per VertX standards. this can be passed with -conf somefile.json on the command line. 
 
 ```json
-
-// Example couchbase mod configuration
-
 {
   "async_mode": true, // tells the Boot class to start async or sync mode
   "address": "vertx.couchbase.async", // the eventbus address this module listens on

@@ -23,12 +23,10 @@ this tests various bucket operations
 
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class ClusterManagerTests extends TestVerticle {
+public class ClusterManagerAsyncTests extends TestVerticle {
 
     EventBus eb;
     JsonObject config;
-    DefaultPrettyPrinter pp;
-    ObjectMapper mapper;
     String address;
     String bucket = "cm_test";
 
@@ -40,13 +38,12 @@ public class ClusterManagerTests extends TestVerticle {
         config = Util.loadConfig(this, "/conf-async.json");
         address = config.getString("address"); // save for tests
 
-        // prettyprinter
-        pp = new DefaultPrettyPrinter();
-        pp.indentArraysWith(new DefaultPrettyPrinter.Lf2SpacesIndenter());
-        mapper = new ObjectMapper();
+        System.out.println("\n\n\nDeploying Mod Couchbase Async\n\n");
+        deployAsync();
 
-        System.out.println("\n\n\nDeploying Mod Couchbase\n\n");
+    }
 
+    public void deployAsync() {
         container.deployVerticle("com.scalabl3.vertxmods.couchbase.Boot", config, new AsyncResultHandler<String>() {
 
             @Override
@@ -67,10 +64,43 @@ public class ClusterManagerTests extends TestVerticle {
                 }
                 // If deployed correctly then start the tests!
                 startTests();
+
             }
         });
-
     }
+
+//    public void deploySync() {
+//        container.deployVerticle("com.scalabl3.vertxmods.couchbase.Boot", config, new AsyncResultHandler<String>() {
+//
+//            @Override
+//            public void handle(AsyncResult<String> asyncResult) {
+//
+//                // Deployment is asynchronous and this this handler will be called when it's complete (or failed)
+//                if (asyncResult.failed()) {
+//                    container.logger().error(asyncResult.cause());
+//                }
+//
+//                assertTrue(asyncResult.succeeded());
+//                assertNotNull("deploymentID should not be null", asyncResult.result());
+//
+//                try {
+//                    Thread.sleep(1000);
+//                } catch (InterruptedException e) {
+//                    e.printStackTrace();
+//                }
+//                // If deployed correctly then start the tests!
+//                startTests();
+//                try {
+//                    Thread.sleep(1000);
+//                } catch (InterruptedException e) {
+//                    e.printStackTrace();
+//                }
+//
+//            }
+//        });
+//    }
+
+
 
     @Test
     public void createBuckets() {

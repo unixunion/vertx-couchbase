@@ -69,6 +69,15 @@ public class CouchbaseEventBusSync extends Verticle {
             e.printStackTrace();
         }
 
+        // init manager connection
+        if (manager_connect) {
+            try {
+                connectClusterManager();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
         // register verticle
         logger.info("registering at address: " + eventbusAddress);
         eb.registerHandler(eventbusAddress, cbSyncHandler, new AsyncResultHandler<Void>() {
@@ -83,28 +92,52 @@ public class CouchbaseEventBusSync extends Verticle {
         public void handle(Message<JsonObject> message) {
             logger.debug("Got message:" + message.body().toString());
             String command = Util.voidNull(message.body().getString("op"));
+            String management_command = Util.voidNull(message.body().getString("management"));
 
-            if (command.isEmpty()) {
-                sendError(message, "\"op\" property is mandatory for request, management NOT supported here yet, please " +
-                        "send management commands to a async worker instance");
+            if (command.isEmpty() && management_command.isEmpty()) {
+                sendError(message, "\"op\" OR \"management\" property is mandatory for request");
                 return;
             }
+
+            if (!command.isEmpty() && !management_command.isEmpty()) {
+                sendError(message, "cannot perform OP and MANAGEMENT at the same time, choose one!");
+                return;
+            }
+
             try {
 
-                CouchbaseCommandPacketSync cbcps = getByName(command);
-                JsonObject json = cbcps.operation(getCBClient(), message);
+                CouchbaseCommandPacketSync cbcps = null;
+                CouchbaseManagerPacketSync cbmps = null;
+                JsonObject json = null;
+
+
+                if (!command.isEmpty()) {
+                    cbcps = getByName(command);
+                    json = cbcps.operation(getCBClient(), message);
+                } else if (!management_command.isEmpty()) {
+                    cbmps = getMgmtByName(management_command);
+                    json = cbmps.operation(getCMClient(), message);
+                } else {
+                    sendError(message, "unable to route command to a client / manager");
+                }
 
                 if (requiresAcknowledgement(message)) {
+                    if (!command.isEmpty()) {
                         acknowledge(message, cbcps.buildResponse(message, json, requiresAcknowledgement(message)));
+                    } else if (!management_command.isEmpty()) {
+                        acknowledge(message, cbmps.buildResponse(message, json, requiresAcknowledgement(message)));
+                    }
                 }
 
             } catch (TimeoutException e) {
                 sendError(message, "operation '" + command + "' timed out");
             } catch (IllegalArgumentException e) {
+                e.printStackTrace();
                 sendError(message, "unknown command: '" + command + "'");
             } catch (ExecutionException e) {
                 sendError(message, "operation '" + command + "' failed");
             } catch (Exception e) {
+                e.printStackTrace();
                 sendError(message, e.getMessage());
             }
         }
@@ -128,11 +161,6 @@ public class CouchbaseEventBusSync extends Verticle {
         message.reply(reply);
     }
 
-    private void connectClusterManager() throws IOException {
-        container.logger().info("Connecting manager");
-        clusterManager = new ClusterManager(ParseNodeList.getAddresses(cbnodes), manager_username, manager_password);
-    }
-
     private void connectCouchbaseClients(int connections) throws IOException {
         couchbaseClients = new CouchbaseClient[connections < 1 ? 1 : connections];
         for (int i = 0; i < couchbaseClients.length; i++) {
@@ -153,5 +181,21 @@ public class CouchbaseEventBusSync extends Verticle {
         return CouchbaseCommandPacketSync.valueOf(name.toUpperCase());
     }
 
+    private void connectClusterManager() throws IOException {
+        container.logger().info("Connecting ClusterManager");
+        clusterManager = new ClusterManager(ParseNodeList.getAddresses(cbnodes), manager_username, manager_password);
+    }
+
+    private ClusterManager getCMClient() {
+        return clusterManager;
+    }
+
+
+    private CouchbaseManagerPacketSync getMgmtByName(String name) {
+        if (name == null) {
+            return null;
+        }
+        return CouchbaseManagerPacketSync.valueOf(name.toUpperCase());
+    }
 
 }
