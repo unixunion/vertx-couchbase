@@ -64,9 +64,10 @@ public class TestPerformance extends TestVerticle {
     }
 
     public void createBucket(final Handler<Message> callback) {
+        System.out.println("Creating BUCKET");
         JsonObject request = new JsonObject()
                 .putString("management", "CREATEBUCKET")
-                .putString("name", "test")
+                .putString("name", config.getString("couchbase.bucket"))
                 .putString("bucketType", "couchbase")
                 .putNumber("memorySizeMB", 128)
                 .putNumber("replicas", 0)
@@ -165,7 +166,13 @@ public class TestPerformance extends TestVerticle {
                 .putString("management", "FLUSHBUCKET")
                 .putString("name", config.getString("couchbase.bucket"))
                 .putBoolean("ack", true);
-        eb.send(config.getString("address"), request);
+
+        eb.send(config.getString("address"), request, new Handler<Message<JsonObject>>() {
+            @Override
+            public void handle(Message<JsonObject> event) {
+                testComplete();
+            }
+        });
 
 //        request = new JsonObject()
 //                .putString("management", "DELETEBUCKET")
@@ -173,7 +180,7 @@ public class TestPerformance extends TestVerticle {
 //                .putBoolean("ack", true);
 //        eb.send(config.getString("address"), request);
 
-        testComplete();
+
 
     }
 

@@ -482,6 +482,8 @@ public class SyncAsync extends TestVerticle{
                 .putString("name", sync_config.getString("bucket"))
                 .putBoolean("ack", false);
         push(request, false);
+
+        testComplete();
     }
 
 

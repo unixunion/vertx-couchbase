@@ -6,6 +6,6 @@
   "couchbase.bucket.password": "", // password if any for the bucket
   "couchbase.num.clients": 1, // number of clients to open towards the couch instances
   "couchbase.manager": true,
-  "couchbase.manager.username": "Administrator",
-  "couchbase.manager.password": "password"
+  "couchbase.manager.username": "admin",
+  "couchbase.manager.password": "qwaszx"
 }
