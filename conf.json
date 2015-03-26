@@ -1,6 +1,6 @@
 {
-  "async_mode": false,
-  "address": "vertx.couchbase.sync",
+  "async_mode": true,
+  "address": "vertx.couchbase.async",
   "couchbase.nodelist": "localhost:8091",
   "couchbase.bucket": "default",
   "couchbase.bucket.password": "",
