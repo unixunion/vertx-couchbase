@@ -5,6 +5,9 @@ This worker connects to your couchbase cluster and listens on the VertX eventbus
 
 This is fork of scalabl3/vertx-couchbase, extended to support:
 
+* async / sync booting
+* config handling
+* newer client implementation
 * View based queries
 * Cluster management commands
 * Boot class
