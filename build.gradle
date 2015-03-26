@@ -56,8 +56,8 @@ dependencies {
     provided "io.vertx:lang-groovy:$groovyLangModVersion@jar"
 
     // If you're creating Scala compiled verticles you may need the following dependencies
-    provided "org.scala-lang:scala-library:$scalaVersion"
-    provided "io.vertx:lang-scala:$scalaLangModVersion@jar"
+//    provided "org.scala-lang:scala-library:$scalaVersion"
+//    provided "io.vertx:lang-scala:$scalaLangModVersion@jar"
 
     compile "com.couchbase.client:couchbase-client:$couchClientVersion"
     compile "com.google.code.gson:gson:$gsonVersion"

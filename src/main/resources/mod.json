@@ -1,11 +1,7 @@
 {
 
-  // Java verticle
   "main":"com.scalabl3.vertxmods.couchbase.Boot",
-  //"worker": true,
 
-  // If your module is going to be registered in the Vert.x module registry you will also need the following
-  // mandatory fields
   "description":"Put description of your module here",
   "licenses": ["The Apache Software License Version 2.0"],
   "author": "Joe Bloggs",
