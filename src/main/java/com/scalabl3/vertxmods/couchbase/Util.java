@@ -49,6 +49,16 @@ public class Util {
     }
 
 
+    // determine if a number can be transformed into a int
+    public static boolean isInteger(Number n) {
+        try {
+            int f = Integer.parseInt(String.valueOf(n));
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
 
     public static JsonObject parseForJson(JsonObject jsonObject, String key, Object value) throws Exception {
         if (value != null) {

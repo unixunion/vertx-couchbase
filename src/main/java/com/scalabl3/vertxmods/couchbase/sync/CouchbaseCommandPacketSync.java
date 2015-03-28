@@ -206,11 +206,13 @@ public enum CouchbaseCommandPacketSync {
             Number by = message.body().getNumber("by") == null? 1 : message.body().getNumber("by");
 
             JsonObject result = new JsonObject();
-            if (by ==(int)by) {
+
+            if (Util.isInteger(by)) {
                 result.putNumber("result", cb.incr(key, (int)by));
             } else {
                 result.putNumber("result", cb.incr(key, (long)by));
             }
+
             return result;
 
         }
@@ -247,7 +249,7 @@ public enum CouchbaseCommandPacketSync {
             Number by = message.body().getNumber("by") == null? 1 : message.body().getNumber("by");
 
             JsonObject result = new JsonObject();
-            if (by ==(int)by) {
+            if (Util.isInteger(by)) {
                 result.putNumber("result", cb.decr(key, (int) by));
             } else {
                 result.putNumber("result", cb.decr(key, (long)by));

@@ -194,22 +194,13 @@ public enum CouchbaseCommandPacketAsync {
             Number by = message.body().getNumber("by") == null? 1 : message.body().getNumber("by");
             OperationFuture<Long> operationFuture;
 
-            if (by == (int)by) {
+            if (Util.isInteger(by)) {
                 operationFuture = cb.asyncIncr(key, (int)by);
             } else {
                 operationFuture = cb.asyncIncr(key, (long)by);
             }
 
             return operationFuture;
-
-//            if (create) {
-//                cb.incr(key, delta, default_value);
-//                return null;
-//            }
-//            else {
-//
-//                return operationFuture;
-//            }
         }
 
         @Override
